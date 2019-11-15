@@ -30,7 +30,14 @@ module RubyRTL
     end
   end
 
-  class Decl < Ast
+  class SigDecl < Ast
+    attr_accessor :name,:sig
+    def initialize name,sig
+      @name,@sig=name,sig
+    end
+  end
+
+  class CompDecl < Ast
     attr_accessor :name,:sig
     def initialize name,sig
       @name,@sig=name,sig
@@ -57,6 +64,25 @@ module RubyRTL
   end
 
   class Unary < Expr
+  end
+
+  # ====== types =====
+  class Type < Ast
+  end
+
+  class Bit < Type
+  end
+
+  class BitVector < Type
+  end
+
+  class Int < Type
+  end
+
+  class Uint < Type
+  end
+
+  class Record < Type
   end
 
 end

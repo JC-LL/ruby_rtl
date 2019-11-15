@@ -25,18 +25,22 @@ module RubyRTL
 
     def process_sig_decl kind,*arg
       case arg
+      when String
+        decl_sig(kind,vname=arg.to_sym,type=:bit)
       when Symbol
-        decl_sig(:input,vname=arg,type=:bit)
+        decl_sig(kind,vname=arg,type=:bit)
       when Array
         # strange ! recursivity seems to fail
         # output(element) # FAILS.
         arg.each do |element|
           case element
+          when String
+            decl_sig(kind,vname=arg.to_sym,type=:bit)
           when Symbol
-            decl_sig(:input,vname=element,type=:bit)
+            decl_sig(kind,vname=element,type=:bit)
           when Hash
             element.each do |vname,type|
-              decl_sig(:input,vname,type)
+              decl_sig(kind,vname,type)
             end
           else
             "ERROR : wrong output declaration in list : '#{arg}'"
@@ -44,6 +48,13 @@ module RubyRTL
         end
       when Hash
         arg.each do |vname,type|
+          case vname
+          when String
+            vname=vname.to_sym
+          when Symbol
+          else
+            raise "DSL syntax ERROR : #{vname} instead of String | Symbol"
+          end
           decl_sig(:input,vname=arg,type)
         end
       else
@@ -58,12 +69,27 @@ module RubyRTL
       instance_variable_set(vname, io)
       port=instance_variable_get(vname)
       self.class.__send__(:attr_accessor, vname_sym)
-      (@ast||=[]) << Decl.new(vname,port)
+      (@ast||=[]) << SigDecl.new(vname,port)
     end
 
     def comment str
       @ast << Comment.new(str)
     end
+
+    def component name_obj_or_class_h
+      comp_name,obj_or_klass=name_obj_or_class_h.first
+      comp_name=comp_name.to_sym if comp_name.is_a? String
+      case klass=comp=obj_or_klass
+      when Class
+        comp=klass.new # but no parameters :-(
+      end
+      cname="@#{comp_name}"
+      instance_variable_set(cname,comp)
+      self.class.__send__(:attr_accessor, comp_name)
+      (@ast||=[]) << CompDecl.new(comp_name,comp)
+      comp
+    end
+
 
     # syntax : ASSIGN( y <= e), instead of ASSIGN(y,e)
     def assign(var_expr_leq)
