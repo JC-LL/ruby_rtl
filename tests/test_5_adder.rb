@@ -5,6 +5,7 @@ include RubyRTL
 require_relative 'test_3_full_adder'
 
 class Adder < Circuit
+
   def initialize nbits
     input  :a    => nbits
     input  :b    => nbits
@@ -29,7 +30,6 @@ class Adder < Circuit
       # final sum
       assign(sum[i]        <= adders[i].sum)
     end
-
   end
 end
 
