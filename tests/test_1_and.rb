@@ -14,7 +14,7 @@ class And < Circuit
   end
 end
 
-#pp a=And.new
+pp a=And.new
 
 # alternative syntax
 class And_v2 < Circuit
@@ -29,4 +29,4 @@ class And_v2 < Circuit
   end
 end
 
-#pp a=And_v2.new
+pp a=And_v2.new

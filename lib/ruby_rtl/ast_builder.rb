@@ -4,6 +4,7 @@ module RubyRTL
 
     attr_accessor :ast
 
+
     # no initialize :
     #  - @ast is not initialized here
     #  - this allows to avoid calling "super" in every circuit.
@@ -17,6 +18,16 @@ module RubyRTL
 
     def output *arg
       process_sig_decl(:output,*arg)
+    end
+
+      # define a type
+    def typedef h
+      name_sym,definition=h.first
+      (@ast||=[]) << decl=TypeDecl.new(name_sym,definition)
+      # warn : global variable
+      $typedefs||={}
+      $typedefs[name_sym]=decl
+      decl
     end
 
     def wire *arg
@@ -35,7 +46,7 @@ module RubyRTL
         arg.each do |element|
           case element
           when String
-            decl_sig(kind,vname=arg.to_sym,type=:bit)
+            decl_sig(kind,vname=element.to_sym,type=:bit)
           when Symbol
             decl_sig(kind,vname=element,type=:bit)
           when Hash
@@ -46,17 +57,8 @@ module RubyRTL
             "ERROR : wrong output declaration in list : '#{arg}'"
           end
         end
-      when Hash
-        arg.each do |vname,type|
-          case vname
-          when String
-            vname=vname.to_sym
-          when Symbol
-          else
-            raise "DSL syntax ERROR : #{vname} instead of String | Symbol"
-          end
-          decl_sig(:input,vname=arg,type)
-        end
+      when Record
+        decl_sig(:input,vname=arg,type)
       else
         raise "ERROR : wrong input declaration '#{arg}'"
       end
@@ -67,9 +69,9 @@ module RubyRTL
       io=klass.new(type)
       vname="@#{vname_sym}"
       instance_variable_set(vname, io)
-      port=instance_variable_get(vname)
       self.class.__send__(:attr_accessor, vname_sym)
-      (@ast||=[]) << SigDecl.new(vname,port)
+      (@ast||=[]) << sig=SigDecl.new(vname,io)
+      sig
     end
 
     def comment str
@@ -90,24 +92,37 @@ module RubyRTL
       comp
     end
 
-
     # syntax : ASSIGN( y <= e), instead of ASSIGN(y,e)
     def assign(var_expr_leq)
       var,expr=var_expr_leq.lhs,var_expr_leq.rhs
-      (@ast||=[]) << assign=Assign.new(var,expr)
-      assign
+      (@ast||=[]) << Assign.new(var,expr)
     end
 
-    def IF(cond,&block)
-      @ast << If.new(cond,&block)
+    def If(cond,&block)
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << If.new(cond,diff)
     end
 
-    def ELSIF(cond,&block)
-      @ast << Elsif.new(cond,&block)
+    def Elsif(cond,&block)
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << Elsif.new(label,diff)
     end
 
-    def ELSE(&block)
-      @ast << Else.new(&block)
+    def Else(&block)
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << Else.new(diff)
     end
 
     # here, we need a trick to evaluate the block.
@@ -116,20 +131,22 @@ module RubyRTL
     # We then try to find the difference between ast before and after
     # the evaluation.
     def combinatorial(label=nil,&block)
-      old_ast=@ast.clone
+      before=@ast||[]
       instance_eval(&block)
-      diff=@ast-old_ast
-      @ast=@ast-diff
-      @ast << Combinatorial.new(label,diff)
+      after=@ast||[]
+      diff=after-before
+      @ast=before
+      @ast << Combinatorial.new(name,diff)
     end
 
     alias :comb :combinatorial
 
     def sequential(label=nil,&block)
-      old_ast=@ast.clone
+      before=@ast.clone
       instance_eval(&block)
-      diff=@ast-old_ast
-      @ast=@ast-diff
+      after=@ast
+      diff=after-before
+      @ast=before
       @ast << Sequential.new(label,diff)
     end
 

@@ -4,11 +4,13 @@ include RubyRTL
 
 class MyCircuit < Circuit
   def initialize
-      input :a           # type Bit
-      input :b => :bit   # type Bit
-      input :c => :bv4   # type BitVector(4)
-      input :d => :uint8 # type Uint(8)
-      input :d => :int16 # type Int(8)
+    input :a           # type Bit
+    input :b => 1      # type bit
+    input :c => :bit   # type Bit
+    input :d => 8      # type BitVector(8)
+    input :e => :bv4   # type BitVector(4)
+    input :f => :uint8 # type Uint(8)
+    input :g => :int16 # type Int(8)
   end
 end
 

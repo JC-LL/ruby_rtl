@@ -9,12 +9,9 @@ class HalfAdder < Circuit
     output :sum
     output :cout
 
-    comment("simple assignment")
-    comment("we inforce description by precising comb")
-    comb(){
-      assign(sum <= a ^ b) #xor
-      assign(sum <= a & b) #cout
-    }
+    assign(sum <= a ^ b) #xor
+    assign(sum <= a & b) #cout
+  
   end
 end
 
