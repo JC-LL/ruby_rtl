@@ -23,7 +23,7 @@ class Adder < Circuit
       assign(adders[i].a <= a[i])
       assign(adders[i].b <= b[i])
       if i==0
-        assign(adders[0].cin <= 0)
+        assign(adders[0].cin <= 0) # no carry in for FA_0
       else
         assign(adders[i].cin <= adders[i-1].cout)
       end
@@ -34,5 +34,5 @@ class Adder < Circuit
 end
 
 if $PROGRAM_NAME==__FILE__
-  pp adder=Adder.new(2)
+  pp adder=Adder.new(8)
 end

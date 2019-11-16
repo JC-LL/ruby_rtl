@@ -5,8 +5,11 @@ include RubyRTL
 class MyCircuit < Circuit
   def initialize
     typedef :imag6 => Record(:re => :int6, :im => :int6)
-    input :h => :imag6
+    input :v => :imag6
+    input :a => 8
   end
 end
 
-pp circuit=MyCircuit.new
+circuit=MyCircuit.new
+pp circuit.a.type
+pp circuit.v[:re].type

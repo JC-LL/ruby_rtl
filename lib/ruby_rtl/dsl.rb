@@ -100,7 +100,6 @@ module RubyRTL
 
     def [](index)
       @subsignals||=[]
-      p type
       case type
       when Integer
         value=type
@@ -116,6 +115,13 @@ module RubyRTL
           sig.subscript_of=self
         end
       when Record
+        field_name=index
+        type.hash.each do |field,field_type|
+          @subsignals << sig=Sig.new(field_type)
+          sig.subscript_of=self
+        end
+        idx=type.hash.keys.index(index)
+        return @subsignals[idx]
       else
         raise "DSL syntax error : no index [#{index}] for signal '#{self}'"
       end
