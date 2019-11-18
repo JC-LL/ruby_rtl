@@ -5,9 +5,33 @@ module RubyRTL
       circuit.ast.each{|node| node.accept(self)}
     end
 
-    def visitSigDecl decl
+    def visitComment comment,args=nil
+    end
+
+    def visitInput input,args=nil
+      input.type.accept(self)
+    end
+
+    def visitOutput output,args=nil
+    end
+
+    def visitSigDecl decl,args=nil
       decl.name
-      puts decl.sig.accept(self)
+      decl.sig.accept(self)
+    end
+
+    def visitSig sig,args=nil
+      sig
+    end
+
+    def visitTypeDecl decl,args=nil
+    end
+
+    def visitAssign assign,args=nil
+    end
+
+    # types
+    def visitBit bit,args=nil
     end
 
   end

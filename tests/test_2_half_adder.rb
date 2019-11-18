@@ -4,14 +4,13 @@ include RubyRTL
 
 class HalfAdder < Circuit
   def initialize
-    input  :a => :bit
-    input  :b => :bit
+    input  :a,:b
     output :sum
     output :cout
 
-    assign(sum <= a ^ b) #xor
-    assign(sum <= a & b) #cout
-  
+    assign(sum  <= a ^ b) #xor
+    assign(cout <= a & b) #cout
+
   end
 end
 

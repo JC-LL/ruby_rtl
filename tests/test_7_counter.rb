@@ -4,7 +4,7 @@ include RubyRTL
 
 class Counter < Circuit
   def initialize
-    input :tick
+    input  :tick
     output :count => :byte
 
     sequential(:counting){

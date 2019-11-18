@@ -1,16 +1,36 @@
 require_relative 'ast_builder'
+# reopen native class
+class Integer
+  def accept(visitor, arg=nil)
+    name = "Integer"
+    visitor.send("visit#{name}".to_sym, self ,arg) # Metaprograming !
+  end
+end
 
 module RubyRTL
 
   class Ast
+    def accept(visitor, arg=nil)
+      name = self.class.name.split(/::/)[1]
+      visitor.send("visit#{name}".to_sym, self ,arg) # Metaprograming !
+    end
+  end
+
+  class Circuit < ASTBuilder
+    attr_accessor :has_sequential_statements
   end
 
   class Comment < Ast
+    attr_accessor :str
     def initialize str
       @str=str
     end
   end
 
+  # further defined in dsl.rb
+  # attributes :
+  # - type
+  # - subscript_of
   class Sig < Ast
   end
 
@@ -38,13 +58,10 @@ module RubyRTL
   end
 
   class CompDecl < Ast
-    attr_accessor :name,:sig
-    def initialize name,sig
-      @name,@sig=name,sig
+    attr_accessor :name,:comp
+    def initialize name,comp
+      @name,@comp=name,comp
     end
-  end
-
-  class Circuit < ASTBuilder
   end
 
   class CircuitPart < Ast
@@ -66,6 +83,7 @@ module RubyRTL
   end
 
   class Assign < Statement
+    attr_accessor :lhs,:rhs
     def initialize lhs,rhs
       @lhs,@rhs=lhs,rhs
     end

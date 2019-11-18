@@ -4,11 +4,13 @@ require_relative 'ast_builder'
 module RubyRTL
 
   class Sig < Ast
+    attr_accessor :name
     attr_accessor :type
     attr_accessor :subscript_of
 
-    def initialize arg=:bit
-      @type=build_type(arg)
+    def initialize name,type=:bit
+      @name=name
+      @type=build_type(type)
     end
 
     def build_type arg
@@ -37,6 +39,8 @@ module RubyRTL
         return BitVector.new(val)
       when Record
         return arg
+      else
+        raise "ERROR : DSL syntax error. build_type for #{arg} (#{arg.class})"
       end
       :undef
     end
@@ -61,6 +65,7 @@ module RubyRTL
     def <=(other)
       Binary.new(self,"<=",other)
     end
+
     def >(other)
       Binary.new(self,"<",other)
     end
@@ -123,7 +128,7 @@ module RubyRTL
         idx=type.hash.keys.index(index)
         return @subsignals[idx]
       else
-        raise "DSL syntax error : no index [#{index}] for signal '#{self}'"
+        raise "DSL syntax error : no index [#{index}] for signal '#{self}' : type is #{type}"
       end
       return @subsignals[index]
     end
@@ -133,7 +138,5 @@ module RubyRTL
   def Record hash
     Record.new(hash)
   end
-
-
 
 end

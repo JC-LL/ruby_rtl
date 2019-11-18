@@ -7,6 +7,7 @@ class MyCircuit < Circuit
     input :a           # type Bit
     input :b => 1      # type bit
     input :c => :bit   # type Bit
+    
     input :d => 8      # type BitVector(8)
     input :e => :bv4   # type BitVector(4)
     input :f => :uint8 # type Uint(8)

@@ -4,7 +4,6 @@ module RubyRTL
 
     attr_accessor :ast
 
-
     # no initialize :
     #  - @ast is not initialized here
     #  - this allows to avoid calling "super" in every circuit.
@@ -66,11 +65,11 @@ module RubyRTL
 
     def decl_sig kind,vname_sym,type=:bit
       klass=Object.const_get(kind.capitalize)
-      io=klass.new(type)
+      io=klass.new(vname_sym,type)
       vname="@#{vname_sym}"
       instance_variable_set(vname, io)
       self.class.__send__(:attr_accessor, vname_sym)
-      (@ast||=[]) << sig=SigDecl.new(vname,io)
+      (@ast||=[]) << sig=SigDecl.new(vname_sym.to_s,io)
       sig
     end
 
@@ -142,6 +141,7 @@ module RubyRTL
     alias :comb :combinatorial
 
     def sequential(label=nil,&block)
+      @has_sequential_statements=true
       before=@ast.clone
       instance_eval(&block)
       after=@ast
@@ -151,6 +151,11 @@ module RubyRTL
     end
 
     alias :seq :sequential
+
+    def name
+      self.class.to_s
+    end
+
 
   end
 end
