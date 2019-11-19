@@ -108,6 +108,21 @@ module RubyRTL
     end
   end
 
+  # FSM
+  class State < Ast
+    attr_accessor :name,:stmts
+    def initialize name,statements=[]
+      @name,@statements=name,statements
+    end
+  end
+
+  class Next < Ast
+    attr_accessor :name
+    def initialize name
+      @name=name
+    end
+  end
+
 
   # === expressions ===
   class Expr < Ast
@@ -122,8 +137,17 @@ module RubyRTL
 
   class Unary < Expr
   end
+  # ====== literals ===
+  class Literal < Ast
+    attr_accessor :val
+    def initialize val
+      @val=val
+    end
+  end
 
-  # ====== types =====
+  class BitLit < Literal
+  end
+  # ====== types ======
   class Type < Ast
   end
 
@@ -138,12 +162,14 @@ module RubyRTL
   end
 
   class Int < Type
+    attr_accessor :nb_bits
     def initialize nbits
       @nb_bits=nbits
     end
   end
 
   class Uint < Type
+    attr_accessor :nb_bits
     def initialize nbits
       @nb_bits=nbits
     end

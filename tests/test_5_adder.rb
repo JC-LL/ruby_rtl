@@ -23,7 +23,8 @@ class Adder < Circuit
       assign(adders[i].a <= a[i])
       assign(adders[i].b <= b[i])
       if i==0
-        assign(adders[0].cin <= 0) # no carry in for FA_0
+        #assign(adders[0].cin <= Bit(0)) # no carry in for FA_0
+        assign(adders[0].cin <= 0)       # even better.
       else
         assign(adders[i].cin <= adders[i-1].cout)
       end

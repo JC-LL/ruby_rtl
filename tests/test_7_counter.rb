@@ -17,8 +17,9 @@ class Counter < Circuit
         }
       }
     }
-
   end
 end
 
-pp circuit=Counter.new
+if $PROGRAM_NAME==__FILE__
+  pp circuit=Counter.new
+end

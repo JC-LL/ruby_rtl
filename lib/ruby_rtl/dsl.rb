@@ -7,6 +7,7 @@ module RubyRTL
     attr_accessor :name
     attr_accessor :type
     attr_accessor :subscript_of
+    attr_accessor :subsignals
 
     def initialize name,type=:bit
       @name=name
@@ -109,20 +110,23 @@ module RubyRTL
       when Integer
         value=type
         (0..value-1).each do |i|
-          @subsignals << sig=Sig.new(1)
+          name="#{self.name}(#{i})"
+          @subsignals << sig=Sig.new(name,1)
           sig.subscript_of=self
         end
-      when BitVector
+      when BitVector,Uint,Int
         bitv=type
         value=bitv.size
         (0..value-1).each do |i|
-          @subsignals << sig=Sig.new(1)
+          name="#{self.name}(#{i})"
+          @subsignals << sig=Sig.new(name,1)
           sig.subscript_of=self
         end
       when Record
         field_name=index
         type.hash.each do |field,field_type|
-          @subsignals << sig=Sig.new(field_type)
+          name="#{self.name}.#{index}"
+          @subsignals << sig=Sig.new(name,field_type)
           sig.subscript_of=self
         end
         idx=type.hash.keys.index(index)
@@ -137,6 +141,10 @@ module RubyRTL
 
   def Record hash
     Record.new(hash)
+  end
+
+  def Bit val
+    BitLit.new(val)
   end
 
 end

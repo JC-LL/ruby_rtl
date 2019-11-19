@@ -30,8 +30,10 @@ module RubyRTL
     end
 
     def wire *arg
-      process_sig_decl(:wire,*arg)
+      process_sig_decl(:sig,*arg)
     end
+
+    alias :signal :wire
 
     def process_sig_decl kind,*arg
       case arg
@@ -156,6 +158,18 @@ module RubyRTL
       self.class.to_s
     end
 
+    def state name, & block
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << State.new(name,diff)
+    end
+
+    def next_state name
+      @ast << Next.new(name)
+    end
 
   end
 end
