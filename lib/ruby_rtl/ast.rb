@@ -65,10 +65,9 @@ module RubyRTL
   end
 
   class CircuitPart < Ast
-    attr_accessor :label,:block
-    def initialize label,ast
-      @label=label
-      @ast=ast
+    attr_accessor :label,:body
+    def initialize label,body
+      @label,@body=label,body
     end
   end
 
@@ -79,6 +78,18 @@ module RubyRTL
   end
 
   # === statements ===
+  class Body < Ast
+    include Enumerable
+    attr_accessor :stmts
+    def initialize stmts=[]
+      @stmts=stmts
+    end
+
+    def each &block
+      stmts.each(&block)
+    end
+  end
+
   class Statement  < Ast
   end
 
@@ -90,40 +101,55 @@ module RubyRTL
   end
 
   class If < Statement
-    def initialize cond, ast
+    attr_accessor :cond,:body
+    attr_accessor :elsifs # feeded by ContextualAnalyzer
+    attr_accessor :else   # idem
+    def initialize cond, body=nil
       @cond=cond
-      @body=ast
+      @body=body
+      @elsifs=[]
     end
   end
 
   class Else < Statement
-    def initialize statements=[]
-      @statements=statements
+    attr_accessor :body
+    def initialize body=nil
+      @body=body
     end
   end
 
   class Elsif < Statement
-    def initialize cond, statements=[]
-      @cond,@statements=cond,statements
+    attr_accessor :cond,:body
+    def initialize cond, body=nil
+      @cond,@body=cond,body
     end
   end
 
   # FSM
+  class Fsm < Ast
+    attr_accessor :name,:body
+    attr_accessor :states # hash
+    attr_accessor :default_assigns
+    def initialize name,body=nil
+      @name,@body=name,body
+      @default_assigns=[]
+    end
+  end
+
   class State < Ast
-    attr_accessor :name,:stmts
-    def initialize name,statements=[]
-      @name,@statements=name,statements
+    attr_accessor :name,:body
+    def initialize name,body=nil
+      @name,@body=name,body
     end
   end
 
   class Next < Ast
     attr_accessor :name
+    attr_accessor :of_state
     def initialize name
       @name=name
     end
   end
-
-
   # === expressions ===
   class Expr < Ast
   end
@@ -151,31 +177,31 @@ module RubyRTL
   class Type < Ast
   end
 
-  class Bit < Type
+  class BitType < Type
   end
 
-  class BitVector < Type
+  class BitVectorType < Type
     attr_accessor :size
     def initialize size
       @size=size
     end
   end
 
-  class Int < Type
+  class IntType < Type
     attr_accessor :nb_bits
     def initialize nbits
       @nb_bits=nbits
     end
   end
 
-  class Uint < Type
+  class UintType < Type
     attr_accessor :nb_bits
     def initialize nbits
       @nb_bits=nbits
     end
   end
 
-  class Record < Type
+  class RecordType < Type
     attr_accessor :hash
     def initialize h
       @hash=h

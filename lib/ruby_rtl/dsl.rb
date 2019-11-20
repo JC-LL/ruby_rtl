@@ -19,15 +19,15 @@ module RubyRTL
       when Symbol
         case sym=arg.to_s
         when "bit"
-          return Bit.new
+          return BitType.new
         when "byte"
-          return Uint.new(8)
+          return IntType.new(8)
         when /\Abv(\d+)/
-          return BitVector.new($1.to_i)
+          return BitVectorType.new($1.to_i)
         when /\Auint(\d+)/
-          return Uint.new($1.to_i)
+          return UintType.new($1.to_i)
         when /\Aint(\d+)/
-          return Int.new($1.to_i)
+          return IntType.new($1.to_i)
         else
           if type=$typedefs[arg] # global var !
             return type.definition
@@ -36,8 +36,8 @@ module RubyRTL
         end
       when Integer
         val=arg
-        return Bit.new if val==1
-        return BitVector.new(val)
+        return BitType.new if val==1
+        return BitVectorType.new(val)
       when Record
         return arg
       else
@@ -114,7 +114,7 @@ module RubyRTL
           @subsignals << sig=Sig.new(name,1)
           sig.subscript_of=self
         end
-      when BitVector,Uint,Int
+      when BitVectorType,UintType,IntType
         bitv=type
         value=bitv.size
         (0..value-1).each do |i|

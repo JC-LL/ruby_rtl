@@ -6,7 +6,7 @@ class TestCast < Circuit
   def initialize
     output  :outb => :byte
 
-    wire :count => :uint8
+    wire :count => :bv16
 
     sequential(:counter){
       assign(count <= count+1)
@@ -18,4 +18,4 @@ end
 
 circuit=TestCast.new
 
-VhdlGenerator.new.generate(circuit)
+Compiler.new.compile(circuit)

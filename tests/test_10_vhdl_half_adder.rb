@@ -4,4 +4,4 @@ require_relative 'test_2_half_adder.rb'
 include RubyRTL
 
 circuit=HalfAdder.new
-VhdlGenerator.new.generate(circuit)
+Compiler.new.compile(circuit)

@@ -35,6 +35,112 @@ module RubyRTL
 
     alias :signal :wire
 
+    def comment str
+      @ast << Comment.new(str)
+    end
+
+    def component name_obj_or_class_h
+      comp_name,obj_or_klass=name_obj_or_class_h.first
+      comp_name=comp_name.to_sym if comp_name.is_a? String
+      case klass=comp=obj_or_klass
+      when Class
+        comp=klass.new # but no parameters :-(
+      end
+      cname="@#{comp_name}"
+      instance_variable_set(cname,comp)
+      self.class.__send__(:attr_accessor, comp_name)
+      (@ast||=[]) << CompDecl.new(comp_name,comp)
+      comp
+    end
+
+    # syntax : ASSIGN( y <= e), instead of ASSIGN(y,e)
+    def assign(var_expr_leq)
+      var,expr=var_expr_leq.lhs,var_expr_leq.rhs
+      (@ast||=[]) << Assign.new(var,expr)
+    end
+
+    def If(cond,&block)
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << If.new(cond,Body.new(diff))
+    end
+
+    def Elsif(cond,&block)
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << Elsif.new(cond,Body.new(diff))
+    end
+
+    def Else(&block)
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << Else.new(Body.new(diff))
+    end
+
+    # here, we need a trick to evaluate the block.
+    # we ask the current ast builder object to evaluate
+    # the block, in its current context.
+    # We then try to find the difference between ast before and after
+    # the evaluation.
+    def combinatorial(label=nil,&block)
+      before=@ast||[]
+      instance_eval(&block)
+      after=@ast||[]
+      diff=after-before
+      @ast=before
+      @ast << Combinatorial.new(name,diff)
+    end
+
+    alias :comb :combinatorial
+
+    def sequential(label=nil,&block)
+      @has_sequential_statements=true
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << Sequential.new(label,Body.new(diff))
+    end
+
+    alias :seq :sequential
+
+    def name
+      self.class.to_s
+    end
+    # === fsm stuff
+    def fsm name, &block
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << Fsm.new(name,Body.new(diff))
+    end
+
+    def state name, &block
+      before=@ast.clone
+      instance_eval(&block)
+      after=@ast
+      diff=after-before
+      @ast=before
+      @ast << State.new(name,Body.new(diff))
+    end
+
+    def next_state name
+      @ast << Next.new(name)
+    end
+
+    private
     def process_sig_decl kind,*arg
       case arg
       when String
@@ -75,101 +181,10 @@ module RubyRTL
       sig
     end
 
-    def comment str
-      @ast << Comment.new(str)
-    end
 
-    def component name_obj_or_class_h
-      comp_name,obj_or_klass=name_obj_or_class_h.first
-      comp_name=comp_name.to_sym if comp_name.is_a? String
-      case klass=comp=obj_or_klass
-      when Class
-        comp=klass.new # but no parameters :-(
-      end
-      cname="@#{comp_name}"
-      instance_variable_set(cname,comp)
-      self.class.__send__(:attr_accessor, comp_name)
-      (@ast||=[]) << CompDecl.new(comp_name,comp)
-      comp
-    end
 
-    # syntax : ASSIGN( y <= e), instead of ASSIGN(y,e)
-    def assign(var_expr_leq)
-      var,expr=var_expr_leq.lhs,var_expr_leq.rhs
-      (@ast||=[]) << Assign.new(var,expr)
-    end
 
-    def If(cond,&block)
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << If.new(cond,diff)
-    end
 
-    def Elsif(cond,&block)
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Elsif.new(label,diff)
-    end
-
-    def Else(&block)
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Else.new(diff)
-    end
-
-    # here, we need a trick to evaluate the block.
-    # we ask the current ast builder object to evaluate
-    # the block, in its current context.
-    # We then try to find the difference between ast before and after
-    # the evaluation.
-    def combinatorial(label=nil,&block)
-      before=@ast||[]
-      instance_eval(&block)
-      after=@ast||[]
-      diff=after-before
-      @ast=before
-      @ast << Combinatorial.new(name,diff)
-    end
-
-    alias :comb :combinatorial
-
-    def sequential(label=nil,&block)
-      @has_sequential_statements=true
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Sequential.new(label,diff)
-    end
-
-    alias :seq :sequential
-
-    def name
-      self.class.to_s
-    end
-
-    def state name, & block
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << State.new(name,diff)
-    end
-
-    def next_state name
-      @ast << Next.new(name)
-    end
 
   end
 end

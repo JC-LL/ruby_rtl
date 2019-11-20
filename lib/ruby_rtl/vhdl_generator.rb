@@ -1,17 +1,21 @@
 require_relative 'code'
 
 module RubyRTL
+
   class VhdlGenerator < Visitor
 
-    attr_accessor :code
     attr_accessor :entity
     attr_accessor :ios
     attr_accessor :archi_elements
 
     def generate circuit
-      @code=Code.new
+      puts "[+] VHDL code generation"
+      code=Code.new
       @ios,@archi_elements=[],[]
       @sigs={}
+      @fsm_defs=[]
+      @sequentials=[]
+      @states={}
 
       circuit.ast.each{|node| node.accept(self)}
 
@@ -20,12 +24,12 @@ module RubyRTL
       code << gen_entity(circuit)
       code.newline
       code << gen_archi(circuit)
-      code=clean_vhdl()
+      code=clean_vhdl(code)
       puts code.finalize
       code.save_as "#{circuit.name.downcase}.vhd"
     end
 
-    def clean_vhdl
+    def clean_vhdl(code)
       txt=code.finalize
       txt.gsub! /;(\s*)\)/,")"
       txt.gsub! /,(\s*)\)/,")"
@@ -63,6 +67,9 @@ module RubyRTL
       archi=Code.new
       archi << "architecture rtl of #{circuit.name}_c is"
       archi.indent=2
+      @fsm_defs.each do |decl|
+        archi << decl
+      end
       @sigs.each do |sig,name|
         archi << "signal #{name} : #{sig.type.accept(self)};"
       end
@@ -97,15 +104,15 @@ module RubyRTL
       type=decl.sig.type.accept(self)
       case decl.sig
       when Input
-        dir="in"
+        ios << "#{name} : in  #{type};"
       when Output
-        dir="out"
+        ios << "#{name} : out #{type};"
       when Sig
         @sigs.merge!(decl.sig => name)
       else
         raise "ERROR : visitSigDecl : neither input ou output"
       end
-      ios << "#{name} : #{dir} #{type};"
+
     end
 
     def visitSig sig,args=nil
@@ -119,28 +126,7 @@ module RubyRTL
     def visitAssign assign,args=nil
       lhs=assign.lhs.accept(self)
       rhs=assign.rhs.accept(self)
-      rhs=ruby_to_vhdl_cast(assign.lhs.type,rhs)
-      archi_elements << "#{lhs} <= #{rhs};"
-    end
-
-    def ruby_to_vhdl_cast(type,expr)
-      case expr
-      when Integer
-        puts "=> casting #{expr} to #{type}"
-        case type
-        when Bit
-          ret=Bit(expr) # method
-        when BitVector
-          ret=BitVector(expr) # method
-        else
-          raise "DSL ERROR : ruby_to_vhdl_cast(#{type},#{expr}) NIY"
-        end
-      when String
-        return expr
-      else
-        raise "DSL ERROR : ruby_to_vhdl_cast(#{type},#{expr}(#{expr.class})) NIY"
-      end
-      ret.accept(self)
+      "#{lhs} <= #{rhs};"
     end
 
     def visitCompDecl comp_decl,args=nil
@@ -171,42 +157,173 @@ module RubyRTL
       instanciation.newline
       archi_elements << instanciation
     end
-    #
+
     def visitSequential sequential,args=nil
       code=Code.new
       label=sequential.label
       code << "#{label} : process(clk)"
       code << "begin"
+      code.indent=2
+      code << "if rising_edge(clk) then"
+      code.indent=4
+      code << sequential.body.accept(self)
+      code.indent=2
+      code << "end if;"
+      code.indent=0
       code << "end;"
       code
+      archi_elements << code
+      code
+    end
+
+    # statement
+    def visitBody body,args=nil
+      code=Code.new
+      body.stmts.each{|stmt| code << stmt.accept(self)}
+      code
+    end
+
+    def visitIf if_,args=nil
+      cond=if_.cond.accept(self)
+      if_body=if_.body.accept(self)
+      code=Code.new
+      code << "if #{cond} then"
+      code.indent=2
+      code << if_body
+      code.indent=0
+      if_.elsifs.each{|elsif_|
+        code << elsif_.accept(self)
+      }
+      code << if_.else.accept(self) if if_.else
+      code << "end if;"
+      code
+    end
+
+    def visitElsif elsif_,args=nil
+      cond=elsif_.cond.accept(self)
+      body=elsif_.body.accept(self)
+      code=Code.new
+      code << "elsif #{cond} then"
+      code.indent=2
+      code << body
+      code.indent=0
+      code
+    end
+
+    def visitElse else_,args=nil
+      body=else_.body.accept(self)
+      code=Code.new
+      code << "else "
+      code.indent=2
+      code << body
+      code.indent=0
+      code
+    end
+
+    # === FSM ===
+    def visitFsm fsm,args=nil
+      state_names=fsm.states.keys.join(",")
+      @fsm_defs << "type #{fsm.name}_state_t is (#{state_names});"
+      @fsm_defs << "signal #{fsm.name}_state_r,#{fsm.name}_state_c : #{fsm.name}_state_t;"
+      body=Code.new
+      body << "#{fsm.name}_update : process(clk)"
+      body << "begin"
+      body.indent=2
+      body << "if rising_edge(clk) then"
+      body.indent=4
+      body << "#{fsm.name}_state_r <= #{fsm.name}_state_c;"
+      body.indent=2
+      body << "end if;"
+      body.indent=0
+      body << "end process;"
+      body.newline
+      archi_elements << body
+      nstate=Code.new
+      nstate << "#{fsm.name}_next_state_p : process(all)" # VHDL 2008
+      nstate.indent=2
+      #nstate << "variable state_v : #{fsm.name}_state_t;"
+      nstate.indent=0
+      nstate << "begin"
+      nstate.indent=2
+      nstate << "--default assignements"
+      #nstate << "state_v := #{fsm.name}_state_r;"
+      nstate << "state_c <= #{fsm.name}_state_r;"
+      fsm.default_assigns.each do |assign|
+        nstate << assign.accept(self)
+      end
+      nstate << state_cases(fsm)
+      # nstate << "--signals update"
+      # nstate << "#{fsm.name}_state_c <= state_v;"
+      nstate.indent=0
+      nstate << "end process;"
+      archi_elements << nstate
+    end
+
+    def state_cases fsm
+      code=Code.new
+      code << "case state_v is"
+      code.indent=2
+      fsm.states.each do |name,state|
+        code << "when #{name} =>"
+        code.indent=4
+        code << state_body(state)
+        code.indent=2
+      end
+      code << "when others =>"
+      code << "  null;"
+      code.indent=0
+      code << "end case;"
+      code
+    end
+
+    def state_body state
+      code=Code.new
+      state.body.each{|stmt| code << stmt.accept(self)}
+      code
+    end
+
+    def visitState state,args=nil
+      code << "when #{state.name}"
+      code
+    end
+
+    def visitNext next_state,args=nil
+      "#{next_state.of_state} <= #{next_state.name};"
     end
 
     # === expressions ===
     VHDL_OP={
       "&" => "and",
       "|" => "or",
-      "^" => "xor"
+      "^" => "xor",
+      "=="=> "=",
+      "%" => "mod"
     }
     def visitBinary bin,args=nil
       lhs=bin.lhs.accept(self)
-      op=VHDL_OP[bin.op]
+      op=VHDL_OP[bin.op] || bin.op
       rhs=bin.rhs.accept(self)
       "(#{lhs} #{op} #{rhs})"
     end
 
     # types
-    def visitBit bit,args=nil
+    def visitBitType bit,args=nil
       "std_logic"
     end
 
-    def visitBitVector bv,args=nil
+    def visitBitVectorType bv,args=nil
       range="#{bv.size-1} downto 0"
       "std_logic_vector(#{range})"
     end
 
-    def visitUint uint,args=nil
+    def visitUintType uint,args=nil
       range="#{uint.nb_bits-1} downto 0"
       "unsigned(#{range})"
+    end
+
+    def visitIntType int,args=nil
+      range="#{int.nb_bits-1} downto 0"
+      "signed(#{range})"
     end
 
     # literals

@@ -4,4 +4,4 @@ require_relative 'test_1_and.rb'
 include RubyRTL
 
 circuit=And.new
-VhdlGenerator.new.generate(circuit)
+Compiler.new.compile(circuit)
