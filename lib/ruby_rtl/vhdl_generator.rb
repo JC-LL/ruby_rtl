@@ -17,7 +17,10 @@ module RubyRTL
       @sequentials=[]
       @states={}
 
-      circuit.ast.each{|node| node.accept(self)}
+      root=circuit.ast
+      root.ios.each{|io| io.accept(self)}
+      root.decls.each{|decl| decl.accept(self)}
+
 
       code << gen_ieee_header()
       code.newline
@@ -64,6 +67,8 @@ module RubyRTL
     end
 
     def gen_archi circuit
+      body=circuit.ast.body
+      archi_elements=body.stmts.collect{|stmt| stmt.accept(self)}
       archi=Code.new
       archi << "architecture rtl of #{circuit.name}_c is"
       archi.indent=2
@@ -132,7 +137,7 @@ module RubyRTL
     def visitCompDecl comp_decl,args=nil
       comp=comp_decl.comp
       instance_name=comp_decl.name
-      sig_decls=comp.ast.select{|node| node.is_a? SigDecl}
+      sig_decls=comp.ast.decls.select{|node| node.is_a? SigDecl}
       inputs =sig_decls.select{|decl| decl.sig.is_a? Input}.map(&:sig)
       outputs=sig_decls.select{|decl| decl.sig.is_a? Output}.map(&:sig)
 
@@ -155,7 +160,7 @@ module RubyRTL
       instanciation << ");"
       instanciation.indent=0
       instanciation.newline
-      archi_elements << instanciation
+      instanciation
     end
 
     def visitSequential sequential,args=nil
@@ -171,8 +176,6 @@ module RubyRTL
       code << "end if;"
       code.indent=0
       code << "end;"
-      code
-      archi_elements << code
       code
     end
 
@@ -237,26 +240,25 @@ module RubyRTL
       body.indent=0
       body << "end process;"
       body.newline
-      archi_elements << body
-      nstate=Code.new
-      nstate << "#{fsm.name}_next_state_p : process(all)" # VHDL 2008
-      nstate.indent=2
-      #nstate << "variable state_v : #{fsm.name}_state_t;"
-      nstate.indent=0
-      nstate << "begin"
-      nstate.indent=2
-      nstate << "--default assignements"
-      #nstate << "state_v := #{fsm.name}_state_r;"
-      nstate << "state_c <= #{fsm.name}_state_r;"
+      
+      body << "#{fsm.name}_next_state_p : process(all)" # VHDL 2008
+      body.indent=2
+      #body << "variable state_v : #{fsm.name}_state_t;"
+      body.indent=0
+      body << "begin"
+      body.indent=2
+      body << "--default assignements"
+      #body << "state_v := #{fsm.name}_state_r;"
+      body << "state_c <= #{fsm.name}_state_r;"
       fsm.default_assigns.each do |assign|
-        nstate << assign.accept(self)
+        body << assign.accept(self)
       end
-      nstate << state_cases(fsm)
-      # nstate << "--signals update"
-      # nstate << "#{fsm.name}_state_c <= state_v;"
-      nstate.indent=0
-      nstate << "end process;"
-      archi_elements << nstate
+      body << state_cases(fsm)
+      # body << "--signals update"
+      # body << "#{fsm.name}_state_c <= state_v;"
+      body.indent=0
+      body << "end process;"
+      body
     end
 
     def state_cases fsm

@@ -9,15 +9,23 @@ end
 
 module RubyRTL
 
+  class Circuit < ASTBuilder
+    attr_accessor :has_sequential_statements
+  end
+
   class Ast
+    attr_accessor :comments
     def accept(visitor, arg=nil)
       name = self.class.name.split(/::/)[1]
       visitor.send("visit#{name}".to_sym, self ,arg) # Metaprograming !
     end
   end
 
-  class Circuit < ASTBuilder
-    attr_accessor :has_sequential_statements
+  class Root < Ast
+    attr_accessor :ios,:decls,:body
+    def initialize
+      @ios,@decls,@body=[],[],Body.new
+    end
   end
 
   class Comment < Ast
@@ -83,6 +91,10 @@ module RubyRTL
     attr_accessor :stmts
     def initialize stmts=[]
       @stmts=stmts
+    end
+
+    def <<(e)
+      @stmts << e
     end
 
     def each &block

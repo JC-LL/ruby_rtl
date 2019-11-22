@@ -7,7 +7,10 @@ module RubyRTL
 
     def check circuit
       puts "[+] contextual analysis"
-      circuit.ast.each{|node| node.accept(self)}
+      root=circuit.ast
+      root.ios.each{|io| io.accept(self)}
+      root.decls.each{|decl| decl.accept(self)}
+      root.body.accept(self)
     end
 
     def visitBody body,args=nil

@@ -19,7 +19,7 @@ module RubyRTL
 
     def compile circuit
       check(circuit)
-      print_ast(circuit,"_checked.dot")
+      print_ast(circuit,"_checked")
       generate(circuit)
     end
 

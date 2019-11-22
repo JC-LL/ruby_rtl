@@ -15,5 +15,6 @@ class And < Circuit
 end
 
 if $PROGRAM_NAME==__FILE__
-  pp circuit=And.new
+  circuit=And.new
+  Compiler.new.compile(circuit)
 end

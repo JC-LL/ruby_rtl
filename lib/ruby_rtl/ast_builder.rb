@@ -4,7 +4,7 @@ module RubyRTL
 
     attr_accessor :ast
 
-    # no initialize :
+    # no 'initialize' :
     #  - @ast is not initialized here
     #  - this allows to avoid calling "super" in every circuit.
     #
@@ -12,20 +12,23 @@ module RubyRTL
     #   - Dont forget the parenthesis !
 
     def input *arg
+      @ast||=Root.new
       process_sig_decl(:input,*arg)
     end
 
     def output *arg
+      @ast||=Root.new
+      @last=@ast
       process_sig_decl(:output,*arg)
     end
 
       # define a type
     def typedef h
+      @ast||=Root.new
+      @last=@ast
       name_sym,definition=h.first
-      (@ast||=[]) << decl=TypeDecl.new(name_sym,definition)
-      # warn : global variable
-      $typedefs||={}
-      $typedefs[name_sym]=decl
+      @ast.typedefs[name_sym] << decl=TypeDecl.new(name_sym,definition)
+      @last=decl
       decl
     end
 
@@ -36,7 +39,7 @@ module RubyRTL
     alias :signal :wire
 
     def comment str
-      @ast << Comment.new(str)
+      (@last.comments||=[]) << Comment.new(str)
     end
 
     def component name_obj_or_class_h
@@ -49,41 +52,39 @@ module RubyRTL
       cname="@#{comp_name}"
       instance_variable_set(cname,comp)
       self.class.__send__(:attr_accessor, comp_name)
-      (@ast||=[]) << CompDecl.new(comp_name,comp)
+      @ast.body << CompDecl.new(comp_name,comp)
       comp
     end
 
     # syntax : ASSIGN( y <= e), instead of ASSIGN(y,e)
     def assign(var_expr_leq)
+      @ast||=Root.new
       var,expr=var_expr_leq.lhs,var_expr_leq.rhs
-      (@ast||=[]) << Assign.new(var,expr)
+      @ast.body << Assign.new(var,expr)
+    end
+
+    def differential_ast &block
+      before=@ast.body.stmts.clone
+      instance_eval(&block)
+      after=@ast.body.stmts
+      diff=after-before
+      @ast.body.stmts=before
+      return diff
     end
 
     def If(cond,&block)
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << If.new(cond,Body.new(diff))
+      diff=differential_ast(&block)
+      @ast.body << If.new(cond,Body.new(diff))
     end
 
     def Elsif(cond,&block)
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Elsif.new(cond,Body.new(diff))
+    diff=differential_ast(&block)
+      @ast.body << Elsif.new(cond,Body.new(diff))
     end
 
     def Else(&block)
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Else.new(Body.new(diff))
+      diff=differential_ast(&block)
+      @ast.body << Else.new(Body.new(diff))
     end
 
     # here, we need a trick to evaluate the block.
@@ -92,24 +93,16 @@ module RubyRTL
     # We then try to find the difference between ast before and after
     # the evaluation.
     def combinatorial(label=nil,&block)
-      before=@ast||[]
-      instance_eval(&block)
-      after=@ast||[]
-      diff=after-before
-      @ast=before
-      @ast << Combinatorial.new(name,diff)
+      diff=differential_ast(&block)
+      @ast.body << Combinatorial.new(name,diff)
     end
 
     alias :comb :combinatorial
 
     def sequential(label=nil,&block)
       @has_sequential_statements=true
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Sequential.new(label,Body.new(diff))
+      diff=differential_ast(&block)
+      @ast.body << Sequential.new(label,Body.new(diff))
     end
 
     alias :seq :sequential
@@ -119,25 +112,17 @@ module RubyRTL
     end
     # === fsm stuff
     def fsm name, &block
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << Fsm.new(name,Body.new(diff))
+      diff=differential_ast(&block)
+      @ast.body << Fsm.new(name,Body.new(diff))
     end
 
     def state name, &block
-      before=@ast.clone
-      instance_eval(&block)
-      after=@ast
-      diff=after-before
-      @ast=before
-      @ast << State.new(name,Body.new(diff))
+      diff=differential_ast(&block)
+      @ast.body << State.new(name,Body.new(diff))
     end
 
     def next_state name
-      @ast << Next.new(name)
+      @ast.body << Next.new(name)
     end
 
     private
@@ -172,19 +157,15 @@ module RubyRTL
     end
 
     def decl_sig kind,vname_sym,type=:bit
+      @ast||=Root.new
       klass=Object.const_get(kind.capitalize)
       io=klass.new(vname_sym,type)
       vname="@#{vname_sym}"
       instance_variable_set(vname, io)
       self.class.__send__(:attr_accessor, vname_sym)
-      (@ast||=[]) << sig=SigDecl.new(vname_sym.to_s,io)
+      @ast.decls << sig=SigDecl.new(vname_sym.to_s,io)
       sig
     end
-
-
-
-
-
 
   end
 end

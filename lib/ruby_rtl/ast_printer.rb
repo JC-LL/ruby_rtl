@@ -20,6 +20,7 @@ module RubyRTL
       code << "node [shape=box, fixedsize=false, fontsize=12, fontname=\"Helvetica-bold\", fontcolor=\"blue\""
       code << "       width=.25, height=.25, color=\"black\", fillcolor=\"white\", style=\"filled, solid, bold\"];"
       code << "edge [arrowsize=.5, color=\"black\", style=\"bold\"]"
+      @visited=[]
       process(ast)
       code << @nodes_decl
       code << @nodes_cnx
@@ -31,38 +32,42 @@ module RubyRTL
     end
 
     def process node,level=0
+
       #puts "processing #{node}"
       kname=node.class.name.split("::")[1] || "#{node.class}"
       id=node.object_id
       (nodes_decl << "#{id} [label=\"#{kname}\"]")
-
+      @visited << node
       node.instance_variables.each{|vname|
         ivar=node.instance_variable_get(vname)
-        vname=vname.to_s[1..-1]
-        if ivar
-          case ivar
-          when Array
-            ivar.each_with_index{|e,idx|
-              sink=process(e,level+2)
+        unless @visited.include?(ivar)
+          vname=vname.to_s[1..-1]
+          if ivar
+            case ivar
+            when Array
+              ivar.each_with_index{|e,idx|
+                sink=process(e,level+2)
+                @printed_cnx[id]||=[]
+                nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}[#{idx}]\"]" if not @printed_cnx[id].include? sink
+                @printed_cnx[id] << sink
+              }
+            when Symbol,Integer,String
+              val=ivar.to_s
+              sink="#{ivar.object_id}"
+              nodes_decl << "#{sink} [label=\"#{val}\",color=\"red\"]"
               @printed_cnx[id]||=[]
-              nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}[#{idx}]\"]" if not @printed_cnx[id].include? sink
+              nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}\"]" if not @printed_cnx[id].include? sink
               @printed_cnx[id] << sink
-            }
-          when Symbol,Integer,String
-            val=ivar.to_s
-            sink="#{ivar.object_id}"
-            nodes_decl << "#{sink} [label=\"#{val}\",color=\"red\"]"
-            @printed_cnx[id]||=[]
-            nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}\"]" if not @printed_cnx[id].include? sink
-            @printed_cnx[id] << sink
-          else
-            sink=process(ivar,level+2)
-            @printed_cnx[id]||=[]
-            nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}\"]" if not @printed_cnx[id].include? sink
-            @printed_cnx[id] << sink
+            else
+              sink=process(ivar,level+2)
+              @printed_cnx[id]||=[]
+              nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}\"]" if not @printed_cnx[id].include? sink
+              @printed_cnx[id] << sink
+            end
           end
         end
       }
+
       return id
     end
 
