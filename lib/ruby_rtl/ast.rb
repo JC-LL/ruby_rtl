@@ -164,6 +164,7 @@ module RubyRTL
   end
   # === expressions ===
   class Expr < Ast
+    attr_accessor :type
   end
 
   class Binary < Expr
@@ -178,12 +179,23 @@ module RubyRTL
   # ====== literals ===
   class Literal < Ast
     attr_accessor :val
+    attr_accessor :type
     def initialize val
       @val=val
     end
   end
 
   class BitLit < Literal
+  end
+
+  class IntLit < Literal
+    def initialize ruby_int
+      @val=ruby_int
+    end
+
+    def +(other)
+      Binary.new(self,"+",other)
+    end
   end
   # ====== types ======
   class Type < Ast

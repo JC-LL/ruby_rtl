@@ -34,5 +34,5 @@ end
 circuit=FSM1.new
 
 compiler=Compiler.new
-compiler.compile(circuit)
-#compiler.generate(circuit)
+compiler.analyze(circuit)
+compiler.generate(circuit)

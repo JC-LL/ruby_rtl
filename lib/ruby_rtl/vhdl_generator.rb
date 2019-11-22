@@ -240,7 +240,7 @@ module RubyRTL
       body.indent=0
       body << "end process;"
       body.newline
-      
+
       body << "#{fsm.name}_next_state_p : process(all)" # VHDL 2008
       body.indent=2
       #body << "variable state_v : #{fsm.name}_state_t;"

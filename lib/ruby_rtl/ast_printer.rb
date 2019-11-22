@@ -4,7 +4,7 @@ module RubyRTL
 
     attr_accessor :code,:nodes_decl,:nodes_cnx
 
-    def print ast,suffix=nil
+    def run ast,suffix=nil
       puts "[+] printing ast in dot file"
       @verbose=false
       @nodes_decl=Code.new
@@ -31,22 +31,23 @@ module RubyRTL
       File.open(dot_filename,'w'){|f| f.puts code.finalize}
     end
 
-    def process node,level=0
-
-      #puts "processing #{node}"
+    def process node,level=1
       kname=node.class.name.split("::")[1] || "#{node.class}"
       id=node.object_id
+      indent=" "*level
+
+      #puts indent+"processing #{node}"
       (nodes_decl << "#{id} [label=\"#{kname}\"]")
-      @visited << node
-      node.instance_variables.each{|vname|
-        ivar=node.instance_variable_get(vname)
-        unless @visited.include?(ivar)
+      unless @visited.include?(id)
+        node.instance_variables.each{|vname|
+          #puts indent+"-"+vname.to_s
+          ivar=node.instance_variable_get(vname)
           vname=vname.to_s[1..-1]
           if ivar
             case ivar
             when Array
               ivar.each_with_index{|e,idx|
-                sink=process(e,level+2)
+                sink=process(e,level+1)
                 @printed_cnx[id]||=[]
                 nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}[#{idx}]\"]" if not @printed_cnx[id].include? sink
                 @printed_cnx[id] << sink
@@ -59,15 +60,15 @@ module RubyRTL
               nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}\"]" if not @printed_cnx[id].include? sink
               @printed_cnx[id] << sink
             else
-              sink=process(ivar,level+2)
+              sink=process(ivar,level+1)
               @printed_cnx[id]||=[]
               nodes_cnx << "#{id} -> #{sink} [label=\"#{vname}\"]" if not @printed_cnx[id].include? sink
               @printed_cnx[id] << sink
             end
           end
-        end
-      }
-
+        }
+      end
+      @visited << id
       return id
     end
 

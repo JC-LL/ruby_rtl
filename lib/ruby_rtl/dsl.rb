@@ -47,6 +47,7 @@ module RubyRTL
     end
 
     def |(other)
+      other=IntLit.new(other) if other.is_a? Integer
       Binary.new(self,"|",other)
     end
 
@@ -64,6 +65,7 @@ module RubyRTL
     end
 
     def <=(other)
+      other=IntLit.new(other) if other.is_a? Integer
       Binary.new(self,"<=",other)
     end
 
@@ -80,6 +82,7 @@ module RubyRTL
     end
     # arith
     def +(other)
+      other=IntLit.new(other) if other.is_a? Integer
       Binary.new(self,"+",other)
     end
 
@@ -112,7 +115,7 @@ module RubyRTL
         (0..value-1).each do |i|
           name="#{self.name}(#{i})"
           @subsignals << sig=Sig.new(name,1)
-          sig.subscript_of=self
+          #sig.subscript_of=self
         end
       when BitVectorType,UintType,IntType
         bitv=type
@@ -120,14 +123,14 @@ module RubyRTL
         (0..value-1).each do |i|
           name="#{self.name}(#{i})"
           @subsignals << sig=Sig.new(name,1)
-          sig.subscript_of=self
+          #sig.subscript_of=self
         end
       when Record
         field_name=index
         type.hash.each do |field,field_type|
           name="#{self.name}.#{index}"
           @subsignals << sig=Sig.new(name,field_type)
-          sig.subscript_of=self
+          #sig.subscript_of=self
         end
         idx=type.hash.keys.index(index)
         return @subsignals[idx]
@@ -137,6 +140,9 @@ module RubyRTL
       return @subsignals[index]
     end
 
+    def coerce(other)
+      [IntLit.new(other), self]
+    end
   end
 
   def Record hash

@@ -8,8 +8,7 @@ module RubyRTL
     #  - @ast is not initialized here
     #  - this allows to avoid calling "super" in every circuit.
     #
-    # Instead, (@ast||=[]) is used when needed.
-    #   - Dont forget the parenthesis !
+    #   - dont forget the parenthesis !
 
     def input *arg
       @ast||=Root.new
@@ -112,11 +111,13 @@ module RubyRTL
     end
     # === fsm stuff
     def fsm name, &block
+      @has_sequential_statements=true
       diff=differential_ast(&block)
       @ast.body << Fsm.new(name,Body.new(diff))
     end
 
     def state name, &block
+      @has_sequential_statements=true
       diff=differential_ast(&block)
       @ast.body << State.new(name,Body.new(diff))
     end

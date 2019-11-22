@@ -5,7 +5,7 @@ module RubyRTL
 
   class ContextualAnalyzer < Visitor
 
-    def check circuit
+    def analyze circuit
       puts "[+] contextual analysis"
       root=circuit.ast
       root.ios.each{|io| io.accept(self)}
@@ -16,6 +16,8 @@ module RubyRTL
     def visitBody body,args=nil
       #reconnect Else/Elsifs objects to their parent If
       reconnectElseParts(body)
+      #attach comments to their adequate Ast nodes
+      attachComments(body)
       body.stmts.each{|stmt| stmt.accept(self,args)}
     end
 
@@ -45,6 +47,10 @@ module RubyRTL
       to_delete.each{|stmt| body.stmts.delete(stmt)}
     end
 
+    def attachComments body
+      #niy
+    end
+
     def visitFsm fsm,args=nil
       @current=fsm
       puts " |-[+] visiting fsm '#{fsm.name}'"
@@ -53,11 +59,11 @@ module RubyRTL
       # build a state hash : state_name => state
       states_nodes=fsm.body.select{|e| e.is_a? State}
       fsm.states=states_nodes.inject({}){|hash,state| hash.merge!( state.name=> state)}
+      # don't forget to visit the states
       fsm.states.each{|_,state| state.accept(self)}
     end
 
     def visitNext next_,args=nil
-      puts "visitNext"
       # enforce 'next' belongs to a whole FSM
       next_.of_state="#{@current.name}_state_c"
     end
