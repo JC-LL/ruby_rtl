@@ -180,8 +180,13 @@ module RubyRTL
   class Literal < Ast
     attr_accessor :val
     attr_accessor :type
-    def initialize val
-      @val=val
+
+    def initialize val,type=nil
+      @val,@type=val,type
+    end
+
+    def to_s
+      "[#{type}]"
     end
   end
 
@@ -189,12 +194,14 @@ module RubyRTL
   end
 
   class IntLit < Literal
-    def initialize ruby_int
-      @val=ruby_int
+    def initialize val
+      super(val,IntType.new)
     end
 
     def +(other)
-      Binary.new(self,"+",other)
+      ret=Binary.new(self,"+",other)
+      ret.type=@type
+      ret
     end
   end
   # ====== types ======
@@ -202,6 +209,9 @@ module RubyRTL
   end
 
   class BitType < Type
+    def to_s
+      "[bit]"
+    end
   end
 
   class BitVectorType < Type
@@ -209,12 +219,19 @@ module RubyRTL
     def initialize size
       @size=size
     end
+    def to_s
+      "[bv #{size}]"
+    end
   end
 
   class IntType < Type
     attr_accessor :nb_bits
-    def initialize nbits
+    def initialize nbits=32
       @nb_bits=nbits
+    end
+
+    def to_s
+      "[int 32]"
     end
   end
 
@@ -222,6 +239,9 @@ module RubyRTL
     attr_accessor :nb_bits
     def initialize nbits
       @nb_bits=nbits
+    end
+    def to_s
+      "[uint 32]"
     end
   end
 

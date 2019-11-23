@@ -1,4 +1,5 @@
 require_relative 'ast_printer'
+require_relative 'dsl_printer'
 require_relative 'contextual_analyzer'
 require_relative 'type_checker'
 require_relative 'vhdl_generator'
@@ -9,7 +10,8 @@ module RubyRTL
 
     def initialize
       header
-      @printer=ASTPrinter.new
+      @printer=DSLPrinter.new
+      @dot_printer=ASTPrinter.new
       @analyzer=ContextualAnalyzer.new
       @checker=TypeChecker.new
       @vgen=VhdlGenerator.new
@@ -22,12 +24,17 @@ module RubyRTL
     def compile circuit
       print_ast(circuit)
       analyze(circuit)
+      print_dsl(circuit)
       type_check(circuit)
       generate(circuit)
     end
 
+    def print_dsl circuit
+      @printer.print circuit
+    end
+
     def print_ast circuit,file_suffix=""
-      @printer.run(circuit,file_suffix)
+      @dot_printer.run(circuit,file_suffix)
     end
 
     def analyze circuit

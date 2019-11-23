@@ -29,7 +29,7 @@ module RubyRTL
         when /\Aint(\d+)/
           return IntType.new($1.to_i)
         else
-          if type=$typedefs[arg] # global var !
+          if type=$typedefs[arg] # global var ! <=== OBSOLETE
             return type.definition
           end
           raise "DSL syntax error : unknow type '#{sym}'"
@@ -43,58 +43,71 @@ module RubyRTL
       else
         raise "ERROR : DSL syntax error. build_type for #{arg} (#{arg.class})"
       end
-      :undef
+      raise "unknown type #{arg}"
+    end
+
+    def treat_int(other)
+      other.is_a?(Integer) ? IntLit.new(other) : other
     end
 
     def |(other)
-      other=IntLit.new(other) if other.is_a? Integer
+      other=treat_int(other)
       Binary.new(self,"|",other)
     end
 
     def &(other)
+      other=treat_int(other)
       Binary.new(self,"&",other)
     end
 
     def ^(other)
+      other=treat_int(other)
       Binary.new(self,"^",other)
     end
 
     # comparison
     def <(other)
+      other=treat_int(other)
       Binary.new(self,"<",other)
     end
 
     def <=(other)
-      other=IntLit.new(other) if other.is_a? Integer
+      other=treat_int(other)
       Binary.new(self,"<=",other)
     end
 
     def >(other)
+      other=treat_int(other)
       Binary.new(self,"<",other)
     end
 
     def >=(other)
+      other=treat_int(other)
       Binary.new(self,"<=",other)
     end
 
     def ==(other)
+      other=treat_int(other)
       Binary.new(self,"==",other)
     end
     # arith
     def +(other)
-      other=IntLit.new(other) if other.is_a? Integer
+      other=treat_int(other)
       Binary.new(self,"+",other)
     end
 
     def -(other)
+      other=treat_int(other)
       Binary.new(self,"-",other)
     end
 
     def *(other)
+      other=treat_int(other)
       Binary.new(self,"*",other)
     end
 
     def /(other)
+      other=treat_int(other)
       Binary.new(self,"/",other)
     end
 
