@@ -9,6 +9,7 @@ class And < Circuit
     output 'f'        # alternative syntax
 
     comment("simple assignment")
+
     assign(f <= a & b)
 
   end

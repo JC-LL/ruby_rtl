@@ -26,8 +26,10 @@ module RubyRTL
       @ast||=Root.new
       @last=@ast
       name_sym,definition=h.first
-      @ast.typedefs[name_sym] << decl=TypeDecl.new(name_sym,definition)
+      @ast.decls << decl=TypeDecl.new(name_sym,definition)
       @last=decl
+      $typedefs||={} # Global var !
+      $typedefs[name_sym]=definition
       decl
     end
 

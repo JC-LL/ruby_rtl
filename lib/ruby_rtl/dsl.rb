@@ -3,6 +3,48 @@ require_relative 'ast_builder'
 
 module RubyRTL
 
+  def build_type arg
+    case arg
+    when Symbol
+      case sym=arg.to_s
+      when "bit"
+        sym="bit_t"
+        ret=BitType.new
+      when "byte"
+        ret=IntType.new(8)
+      when /\Abv(\d+)/
+        ret=BitVectorType.new($1.to_i)
+      when /\Auint(\d+)/
+        ret=UintType.new($1.to_i)
+      when /\Aint(\d+)?/
+        nbits=($1 || 32).to_i
+        ret=IntType.new(nbits)
+      else
+        unless ret=$typedefs[arg] # global var !
+          raise "DSL syntax error : unknow type '#{sym}'"
+        end
+      end
+      $typedefs||={}
+      $typedefs[sym]||=ret
+    when Integer
+      val=arg
+      if val==1
+        name="bit"
+        ret=BitType.new if val==1
+      else
+        name="bv#{val}"
+        ret=BitVectorType.new(val)
+      end
+      $typedefs||={}
+      $typedefs[name]||=ret
+    when Hash
+      ret=arg
+    else
+      raise "ERROR : DSL syntax error. build_type for #{arg} (#{arg.class})"
+    end
+    ret
+  end
+
   class Sig < Ast
     attr_accessor :name
     attr_accessor :type
@@ -14,40 +56,17 @@ module RubyRTL
       @type=build_type(type)
     end
 
-    def build_type arg
-      case arg
-      when Symbol
-        case sym=arg.to_s
-        when "bit"
-          return BitType.new
-        when "byte"
-          return IntType.new(8)
-        when /\Abv(\d+)/
-          return BitVectorType.new($1.to_i)
-        when /\Auint(\d+)/
-          return UintType.new($1.to_i)
-        when /\Aint(\d+)/
-          return IntType.new($1.to_i)
-        else
-          if type=$typedefs[arg] # global var ! <=== OBSOLETE
-            return type.definition
-          end
-          raise "DSL syntax error : unknow type '#{sym}'"
-        end
-      when Integer
-        val=arg
-        return BitType.new if val==1
-        return BitVectorType.new(val)
-      when Record
-        return arg
-      else
-        raise "ERROR : DSL syntax error. build_type for #{arg} (#{arg.class})"
-      end
-      raise "unknown type #{arg}"
-    end
-
     def treat_int(other)
-      other.is_a?(Integer) ? IntLit.new(other) : other
+      case other
+      when Integer
+        if other >=0
+          return RUintLit.new(other)
+        else
+          return RIntLit.new(other)
+        end
+      else
+        return other
+      end
     end
 
     def |(other)
@@ -134,16 +153,15 @@ module RubyRTL
         bitv=type
         value=bitv.size
         (0..value-1).each do |i|
-          name="#{self.name}(#{i})"
+          name="#{self.name}[#{i}]"
           @subsignals << sig=Sig.new(name,1)
           #sig.subscript_of=self
         end
-      when Record
+      when RecordType
         field_name=index
         type.hash.each do |field,field_type|
           name="#{self.name}.#{index}"
           @subsignals << sig=Sig.new(name,field_type)
-          #sig.subscript_of=self
         end
         idx=type.hash.keys.index(index)
         return @subsignals[idx]
@@ -158,8 +176,23 @@ module RubyRTL
     end
   end
 
+  def Memory hash
+    size,type=hash.first
+    Memory.new(size,type)
+  end
+
   def Record hash
-    Record.new(hash)
+    h={}
+    hash.each do |name,type|
+      type||=$typedefs[type]
+      type=build_type(type)
+      h[name]=type
+    end
+    RecordType.new(h)
+  end
+
+  def Struct hash
+    RecordType.new(hash)
   end
 
   def Bit val

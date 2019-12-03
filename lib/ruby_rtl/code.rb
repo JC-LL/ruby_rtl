@@ -8,6 +8,10 @@ class Code
     @indent=0
   end
 
+  def size
+    @lines.size
+  end
+
   def <<(thing)
     if (code=thing).is_a? Code
       code.lines.each do |line|

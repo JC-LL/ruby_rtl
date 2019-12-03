@@ -69,9 +69,7 @@ module RubyRTL
 
     # === fsm
     def visitFsm fsm,args=nil
-      fsm.states.each do |name,state|
-        state.accept(self)
-      end
+      fsm.body.accept(self)
     end
 
     def visitState state,args=nil
@@ -82,26 +80,42 @@ module RubyRTL
     end
 
     # === expr ===
-    def visitExpr node,args=nil
-    end
-
     def visitBinary node,args=nil
+      node.lhs.accept(self)
+      node.rhs.accept(self)
     end
 
     def visitUnary node,args=nil
+      node.expr.accept(self)
     end
 
     # === literals ===
     def visitLiteral node,args=nil
+      node
     end
 
     def visitBitLit node,args=nil
+      node
     end
 
     def visitIntLit lit,args=nil
+      lit
+    end
+
+    def visitRIntLit lit,args=nil
+      lit
+    end
+
+    def visitRIntLit lit,args=nil
+      lit
+    end
+
+    def visitRUintLit lit,args=nil
+      lit
     end
     # === types ===
     def visitInteger int,args=nil
+      int
     end
 
     def visitType node,args=nil

@@ -176,6 +176,13 @@ module RubyRTL
 
   class Unary < Expr
   end
+  # func call
+  class FuncCall < Expr
+    attr_accessor :name,:args
+    def initialize name,args=[]
+      @name,@args=name,args
+    end
+  end
   # ====== literals ===
   class Literal < Ast
     attr_accessor :val
@@ -183,10 +190,6 @@ module RubyRTL
 
     def initialize val,type=nil
       @val,@type=val,type
-    end
-
-    def to_s
-      "[#{type}]"
     end
   end
 
@@ -204,13 +207,27 @@ module RubyRTL
       ret
     end
   end
+
+  class RIntLit < Literal
+    def initialize val
+      super(val,RIntType.new)
+    end
+  end
+
+  class RUintLit < Literal
+    def initialize val
+      nbits=Math.log2(val).floor + 1
+      super(val,RUintType.new(nbits))
+    end
+  end
+
   # ====== types ======
   class Type < Ast
   end
 
   class BitType < Type
     def to_s
-      "[bit]"
+      "bit"
     end
   end
 
@@ -220,28 +237,48 @@ module RubyRTL
       @size=size
     end
     def to_s
-      "[bv #{size}]"
+      "bv#{size}"
+    end
+  end
+
+  class RType < Type
+    attr_accessor :bitwidth
+    def initialize bitwidth
+      @bitwidth=bitwidth
+    end
+  end
+
+  class RIntType < RType # Ruby Int !
+    def to_s
+      "rint#{bitwidth}"
+    end
+  end
+
+  class RUintType < RType # Ruby Int !
+    def to_s
+      "ruint#{bitwidth}"
     end
   end
 
   class IntType < Type
-    attr_accessor :nb_bits
+    attr_accessor :bitwidth
     def initialize nbits=32
-      @nb_bits=nbits
+      @bitwidth=nbits
     end
 
     def to_s
-      "[int 32]"
+      "int#{bitwidth}"
     end
   end
 
   class UintType < Type
-    attr_accessor :nb_bits
+    attr_accessor :bitwidth
     def initialize nbits
-      @nb_bits=nbits
+      @bitwidth=nbits
     end
+
     def to_s
-      "[uint 32]"
+      "uint#{bitwidth}"
     end
   end
 
@@ -249,6 +286,21 @@ module RubyRTL
     attr_accessor :hash
     def initialize h
       @hash=h
+    end
+
+    def to_s
+      if (values=$typedefs.values).include?(self)
+        idx=values.index(self)
+        name=$typedefs.keys[idx]
+        "§#{name}"
+      end
+    end
+  end
+
+  class MemoryType < Type
+    attr_accessor :size,:type
+    def initialize size,type
+      @size,@type=size,type
     end
   end
 

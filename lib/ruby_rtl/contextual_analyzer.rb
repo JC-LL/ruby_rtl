@@ -8,9 +8,11 @@ module RubyRTL
     def analyze circuit
       puts "[+] contextual analysis"
       root=circuit.ast
-      root.ios.each{|io| io.accept(self)}
-      root.decls.each{|decl| decl.accept(self)}
-      root.body.accept(self)
+      if root
+        root.ios.each{|io| io.accept(self)}
+        root.decls.each{|decl| decl.accept(self)}
+        root.body.accept(self)
+      end
     end
 
     def visitBody body,args=nil
@@ -57,10 +59,12 @@ module RubyRTL
       # default assignements
       fsm.default_assigns=fsm.body.select{|e| e.is_a? Assign}
       # build a state hash : state_name => state
-      states_nodes=fsm.body.select{|e| e.is_a? State}
-      fsm.states=states_nodes.inject({}){|hash,state| hash.merge!( state.name=> state)}
+      state_nodes=fsm.body.select{|e| e.is_a? State}
+      # fsm.states=states_nodes.inject({}){|hash,state| hash.merge!( state.name=> state)}
+      # build a state array
+      fsm.states=state_nodes
       # don't forget to visit the states
-      fsm.states.each{|_,state| state.accept(self)}
+      fsm.states.each{|state| state.accept(self)}
     end
 
     def visitNext next_,args=nil

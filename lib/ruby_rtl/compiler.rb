@@ -26,6 +26,7 @@ module RubyRTL
       analyze(circuit)
       print_dsl(circuit)
       type_check(circuit)
+      print_dsl(circuit)
       generate(circuit)
     end
 
