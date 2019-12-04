@@ -23,11 +23,14 @@ module RubyRTL
       case pair
       when [BitType,BitType]
       when [BitType,UintType]
-        cast=[:to_bit]
+        cast=[:to_bit,1]
       when [BitType,IntType]
-        cast=[:to_bit]
+        cast=[:to_bit,1]
+
+      when [BitType,RUintType]
+        cast=[:to_bit,1]
       when [IntType,BitType]
-        cast=[:to_bit]
+        cast=[:to_bit,1]
       when [IntType,IntType]
         if t1.bitwidth==t2.bitwidth
           return #nothing to do
@@ -78,6 +81,10 @@ module RubyRTL
         conv=[["to_uint",t2.bitwidth],nil,t2]
       when [BitType,IntType]
         conv=[["to_int",t2.bitwidth],nil,t2]
+      when [BitType,RIntType]
+        conv=[["to_int",t2.bitwidth],nil,t2]
+      when [BitType,RUintType]
+        conv=[["to_uint",t2.bitwidth],nil,t2]
       when [IntType,BitType]
         conv=[nil,["to_int",t1.bitwidth]]
       when [IntType,IntType]
@@ -110,9 +117,7 @@ module RubyRTL
         type=IntType.new(max)
         conv=[["to_int",max],["to_int",max],type]
       when [UintType,UintType]
-        if t1.bitwidth==t2.bitwidth
-          return #nothing to do
-        else
+        unless t1.bitwidth==t2.bitwidth
           max=[t1.bitwidth,t2.bitwidth].max
           if t1==max
             conv=[nil,["to_uint",max],t1]

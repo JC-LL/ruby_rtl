@@ -1,3 +1,4 @@
+require_relative "ruby_rtl/ast"
 require_relative "ruby_rtl/dsl"
 require_relative "ruby_rtl/compiler"
 require_relative "ruby_rtl/visitor"

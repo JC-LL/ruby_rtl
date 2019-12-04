@@ -8,6 +8,8 @@ class Counter < Circuit
     output :count => :byte
     output :test => :int16
 
+    wire :w1 => :int16
+
     sequential(:strange_counting){
       If(do_count==1){
         If(count==255){
@@ -23,8 +25,10 @@ class Counter < Circuit
     }
 
     assign(test <= 42)
-    assign(test <= 1 + test)
 
+    sequential(:count){
+      assign(w1 <= 1 + w1)
+    }
   end
 end
 

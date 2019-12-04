@@ -38,5 +38,4 @@ end
 
 circuit=FsmTest.new
 compiler=Compiler.new
-compiler.analyze(circuit)
-compiler.print_dsl(circuit)
+compiler.compile(circuit)

@@ -54,7 +54,8 @@ module RubyRTL
     end
 
     def visitFsm fsm,args=nil
-      @current=fsm
+      @fsm=fsm
+      @tmp_ary=[] #helper
       puts " |-[+] visiting fsm '#{fsm.name}'"
       # default assignements
       fsm.default_assigns=fsm.body.select{|e| e.is_a? Assign}
@@ -64,12 +65,23 @@ module RubyRTL
       # build a state array
       fsm.states=state_nodes
       # don't forget to visit the states
+      @in_state=true
       fsm.states.each{|state| state.accept(self)}
+      @in_state=false
     end
 
-    def visitNext next_,args=nil
-      # enforce 'next' belongs to a whole FSM
-      next_.of_state="#{@current.name}_state_c"
+    def visitState state,args=nil
+      state.body.accept(self)
+    end
+
+    def visitAssign assign,args=nil
+      if @in_state
+        puts "pushing #{assign}"
+        unless @tmp_ary.include?(id=assign.lhs.object_id)
+          @tmp_ary << id
+          @fsm.assignments << assign
+        end
+      end
     end
 
   end

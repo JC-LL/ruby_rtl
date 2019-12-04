@@ -8,7 +8,7 @@ module RubyRTL
     when Symbol
       case sym=arg.to_s
       when "bit"
-        sym="bit_t"
+        sym="bit"
         ret=BitType.new
       when "byte"
         ret=IntType.new(8)
@@ -128,6 +128,11 @@ module RubyRTL
     def /(other)
       other=treat_int(other)
       Binary.new(self,"/",other)
+    end
+
+    def !=(other)
+      other=treat_int(other)
+      Binary.new(self,"!=",other)
     end
 
     # unary expressions

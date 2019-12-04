@@ -137,14 +137,16 @@ module RubyRTL
     end
   end
 
-  # FSM
+  # === FSM ===
   class Fsm < Ast
     attr_accessor :name,:body
     attr_accessor :states # hash
     attr_accessor :default_assigns
+    attr_accessor :assignments
     def initialize name,body=nil
       @name,@body=name,body
-      @default_assigns=[]
+      @default_assigns=[] # external to states structures
+      @assignments=[] # to generate VHDL
     end
   end
 
@@ -157,7 +159,6 @@ module RubyRTL
 
   class Next < Ast
     attr_accessor :name
-    attr_accessor :of_state
     def initialize name
       @name=name
     end
@@ -216,6 +217,7 @@ module RubyRTL
 
   class RUintLit < Literal
     def initialize val
+      val=val==0 ? 1 : val
       nbits=Math.log2(val).floor + 1
       super(val,RUintType.new(nbits))
     end

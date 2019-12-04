@@ -175,8 +175,9 @@ module RubyRTL
     end
 
     def visitFuncCall func,args=nil
+      puts "visiting func call #{func.name}"
       name=func.name
-      pp args
+      pp func.args
       argus=func.args.collect{|arg| arg.accept(self)}.join(',')
       "#{name}(#{argus})"
     end
