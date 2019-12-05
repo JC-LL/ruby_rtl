@@ -177,9 +177,14 @@ module RubyRTL
     def visitFuncCall func,args=nil
       puts "visiting func call #{func.name}"
       name=func.name
-      pp func.args
       argus=func.args.collect{|arg| arg.accept(self)}.join(',')
       "#{name}(#{argus})"
+    end
+
+    def visitIndexed indexed,args=nil
+      lhs=indexed.lhs.accept(self)
+      rhs=indexed.rhs.accept(self)
+      "#{lhs}[#{rhs}]"
     end
 
     # === literals ===
@@ -242,6 +247,11 @@ module RubyRTL
 
     def visitEnumType enum_type,args=nil
       "Enum(#{enum_type.items.join(",")})"
+    end
+
+    def visitMemoryType mem_type,args=nil
+      typename=mem_type.type
+      "Memory(#{mem_type.size},#{typename})"
     end
 
     def visitCase case_,args=nil

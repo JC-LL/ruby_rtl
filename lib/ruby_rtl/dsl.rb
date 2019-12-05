@@ -14,8 +14,9 @@ module RubyRTL
         ret=IntType.new(8)
       when /\Abv(\d+)/
         ret=BitVectorType.new($1.to_i)
-      when /\Auint(\d+)/
-        ret=UintType.new($1.to_i)
+      when /\Auint(\d+)?/
+        nbits=($1 || 32).to_i
+        ret=UIntType.new(nbits)
       when /\Aint(\d+)?/
         nbits=($1 || 32).to_i
         ret=IntType.new(nbits)
@@ -39,7 +40,7 @@ module RubyRTL
       $typedefs[name]||=ret
     when Hash
       ret=arg
-    when IntType,UintType,BitType,BitVectorType
+    when IntType,UIntType,BitType,BitVectorType
       ret=arg
     else
       raise "ERROR : DSL syntax error. build_type for #{arg} (#{arg.class})"
@@ -149,36 +150,9 @@ module RubyRTL
     end
 
     def [](index)
-      @subsignals||=[]
-      case type
-      when Integer
-        value=type
-        (0..value-1).each do |i|
-          name="#{self.name}(#{i})"
-          @subsignals << sig=Sig.new(name,1)
-          #sig.subscript_of=self
-        end
-      when BitVectorType,UintType,IntType
-        bitv=type
-        value=bitv.size
-        (0..value-1).each do |i|
-          name="#{self.name}[#{i}]"
-          @subsignals << sig=Sig.new(name,1)
-          #sig.subscript_of=self
-        end
-      when RecordType
-        field_name=index
-        type.hash.each do |field,field_type|
-          name="#{self.name}.#{index}"
-          field_type=build_type(field_type)
-          @subsignals << sig=Sig.new(name,field_type)
-        end
-        idx=type.hash.keys.index(index)
-        return @subsignals[idx]
-      else
-        raise "DSL syntax error : no index [#{index}] for signal '#{self}' : type is #{type}"
-      end
-      return @subsignals[index]
+      @indexed||={}
+      index=treat_int(index)
+      @indexed[index.to_s]||=Indexed.new(self,index,@type.type)
     end
 
     def coerce(other)
@@ -186,9 +160,16 @@ module RubyRTL
     end
   end
 
-  def Memory hash
-    size,type=hash.first
-    Memory.new(size,type)
+  class Indexed < Sig
+    attr_accessor :lhs,:rhs
+    def initialize lhs,rhs,type
+      super("foo",type)
+      @lhs,@rhs=lhs,rhs
+    end
+  end
+
+  def Memory size,type
+    MemoryType.new(size,type)
   end
 
   def Record hash

@@ -453,6 +453,13 @@ module RubyRTL
       argus=func.args.map{|arg| arg.accept(self)}.join(',')
       "#{name}(#{argus})"
     end
+
+    def visitIndexed indexed,args=nil
+      lhs=indexed.lhs.accept(self)
+      rhs=indexed.rhs.accept(self)
+      "#{lhs}(#{rhs})"
+    end
+
     # === types
     def visitBitType bit,args=nil
       "std_logic"
@@ -463,7 +470,7 @@ module RubyRTL
       "std_logic_vector(#{range})"
     end
 
-    def visitUintType uint,args=nil
+    def visitUIntType uint,args=nil
       range="#{uint.bitwidth-1} downto 0"
       "unsigned(#{range})"
     end
@@ -471,6 +478,10 @@ module RubyRTL
     def visitIntType int,args=nil
       range="#{int.bitwidth-1} downto 0"
       "signed(#{range})"
+    end
+
+    def visitMemoryType memtype,args=nil
+      "array(0 to #{memtype.size-1}) of #{memtype.type}"
     end
 
     def default_init type

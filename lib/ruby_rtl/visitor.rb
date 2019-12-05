@@ -99,6 +99,10 @@ module RubyRTL
       node.expr.accept(self)
     end
 
+    def visitIndexed indexed,args=nil
+      lhs=indexed.lhs.accept(self)
+      rhs=indexed.rhs.accept(self)
+    end
     # === literals ===
     def visitLiteral node,args=nil
       node

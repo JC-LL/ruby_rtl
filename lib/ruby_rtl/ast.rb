@@ -191,6 +191,7 @@ module RubyRTL
 
   class Unary < Expr
   end
+
   # func call
   class FuncCall < Expr
     attr_accessor :name,:args
@@ -198,6 +199,8 @@ module RubyRTL
       @name,@args=name,args
     end
   end
+
+
   # ====== literals ===
   class Literal < Ast
     attr_accessor :val

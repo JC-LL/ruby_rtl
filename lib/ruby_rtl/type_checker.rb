@@ -176,6 +176,10 @@ module RubyRTL
       sig.type
     end
 
+    def visitIndexed indexed, args=nil
+      indexed.type
+    end
+
     def visitInput input,args=nil
       input.type
     end
