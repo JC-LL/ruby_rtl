@@ -22,13 +22,14 @@ module RubyRTL
       cast=nil
       case pair
       when [BitType,BitType]
-      when [BitType,UintType]
+      when [BitType,UIntType]
         cast=[:to_bit,1]
       when [BitType,IntType]
         cast=[:to_bit,1]
 
-      when [BitType,RUintType]
+      when [BitType,RUIntType]
         cast=[:to_bit,1]
+
       when [IntType,BitType]
         cast=[:to_bit,1]
       when [IntType,IntType]
@@ -37,24 +38,38 @@ module RubyRTL
         else
           cast=[:to_int,t1.bitwidth]
         end
-      when [IntType,UintType]
+      when [IntType,UIntType]
         unless t1.bitwidth==t2.bitwidth
           cast=[:to_int,t1.bitwidth]
         end
-      when [UintType,BitType]
+      when [IntType,RUIntType]
+        unless t1.bitwidth == t2.bitwidth
+          cast=[:to_int,t1.bitwidth]
+        end
+      when [UIntType,BitType]
         cast=[:to_uint,t1.bitwidth]
-      when [UintType,IntType]
+      when [UIntType,RIntType]
+        cast=[:to_uint,t1.bitwidth]
+      when [UIntType,RUIntType]
+        cast=[:to_uint,t1.bitwidth]
+
+      when [UIntType,IntType]
         u_bw,s_bw=t1.bitwidth,t2.bitwidth
         cast=[:to_uint,u_bw]
-      when [UintType,UintType]
+      when [UIntType,UIntType]
         if t1.bitwidth==t2.bitwidth
           return #nothing to do
         else
           cast=[:to_uint,t1.bitwidth]
         end
+      #============ bit vector =============
+      when [BitVectorType,UIntType]
+        cast=[:to_bv,t1.bitwidth]
+      when [BitVectorType,RUIntType]
+        cast=[:to_bv,t1.bitwidth]
       when [RecordType,RecordType]
       else
-        raise "NIY homogenize #{pair}"
+        raise "NIY cast #{pair}"
       end
       return cast
     end
@@ -71,26 +86,27 @@ module RubyRTL
       end
     end
 
-
-    def homogenize t1,t2
+    def homogenize t1,op,t2
       pair=[t1.class,t2.class]
       conv=[nil,nil,t1]
       case pair
       when [BitType,BitType]
-      when [BitType,UintType]
+        unless ["&","|","^"].include?(op)
+          raise "illegal operation '#{op}' between 2 bits"
+        end
+      when [BitType,UIntType]
         conv=[["to_uint",t2.bitwidth],nil,t2]
       when [BitType,IntType]
         conv=[["to_int",t2.bitwidth],nil,t2]
       when [BitType,RIntType]
         conv=[["to_int",t2.bitwidth],nil,t2]
-      when [BitType,RUintType]
+      when [BitType,RUIntType]
         conv=[["to_uint",t2.bitwidth],nil,t2]
+
       when [IntType,BitType]
-        conv=[nil,["to_int",t1.bitwidth]]
+        conv=[nil,["to_int",t1.bitwidth],t1]
       when [IntType,IntType]
-        if t1.bitwidth==t2.bitwidth
-          return #nothing to do
-        else
+        unless t1.bitwidth==t2.bitwidth
           max=[t1.bitwidth,t2.bitwidth].max
           if t1==max
             conv=[nil,["to_int",max],t1]
@@ -98,10 +114,15 @@ module RubyRTL
             conv=[["to_int",max],nil,t2]
           end
         end
-      when [IntType,UintType]
-        if t1.bitwidth==t2.bitwidth
-          return #nothing to do
+      when [IntType,UIntType]
+        max=[t1.bitwidth,t2.bitwidth].max
+        if t1==max
+          conv=[nil,["to_int",max],t1]
         else
+          conv=[["to_uint",max],nil,t2]
+        end
+      when [IntType,RUIntType]
+        unless t1.bitwidth >= t2.bitwidth # note >=
           max=[t1.bitwidth,t2.bitwidth].max
           if t1==max
             conv=[nil,["to_int",max],t1]
@@ -109,14 +130,14 @@ module RubyRTL
             conv=[["to_int",max],nil,t2]
           end
         end
-      when [UintType,BitType]
+      when [UIntType,BitType]
         conv=[nil,["to_uint",t1.bitwidth],t1]
-      when [UintType,IntType]
+      when [UIntType,IntType]
         u_bw,s_bw=t1.bitwidth,t2.bitwidth
         max=[u_bw,s_bw].max
         type=IntType.new(max)
         conv=[["to_int",max],["to_int",max],type]
-      when [UintType,UintType]
+      when [UIntType,UIntType]
         unless t1.bitwidth==t2.bitwidth
           max=[t1.bitwidth,t2.bitwidth].max
           if t1==max
@@ -126,10 +147,10 @@ module RubyRTL
           end
         end
       when [RecordType,RecordType]
-        conv=[nil,nil]
       else
         raise "NIY homogenize #{pair}"
       end
+      pp conv
       return conv
     end
 
@@ -138,7 +159,8 @@ module RubyRTL
       lhs_t=bin.lhs.accept(self)
       rhs_t=bin.rhs.accept(self)
       puts "\ttypes : #{lhs_t} #{bin.op} #{rhs_t}"
-      conv_funcs=homogenize(lhs_t,rhs_t)
+      conv_funcs=homogenize(lhs_t,bin.op,rhs_t)
+      pp conv_funcs
       if conv=conv_funcs[0]
         name,bitwidth=*conv
         bin.lhs=FuncCall.new(name,[bin.lhs,bitwidth])
@@ -167,11 +189,15 @@ module RubyRTL
       lit.type
     end
 
+    def visitUIntLit lit,args=nil
+      lit.type
+    end
+
     def visitRIntLit lit,args=nil
       lit.type
     end
 
-    def visitRUintLit lit,args=nil
+    def visitRUIntLit lit,args=nil
       lit.type
     end
 

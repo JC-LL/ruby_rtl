@@ -5,9 +5,10 @@ include RubyRTL
 class Counter < Circuit
   def initialize
     input  :do_count
-    output :count => :byte
+    output :value => :byte
     output :test => :int16
 
+    wire :count => :byte
     wire :w1 => :int16
 
     sequential(:strange_counting){
@@ -25,8 +26,8 @@ class Counter < Circuit
     }
 
     assign(test <= 42)
-
-    sequential(:count){
+    assign(value <= count)
+    sequential(:counting){
       assign(w1 <= 1 + w1)
     }
   end
@@ -36,4 +37,5 @@ circuit=Counter.new
 
 compiler=Compiler.new
 #compiler.analyze(circuit)
-compiler.print_dsl(circuit)
+#compiler.print_dsl(circuit)
+compiler.compile(circuit)

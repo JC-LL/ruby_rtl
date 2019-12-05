@@ -67,6 +67,16 @@ module RubyRTL
       elsif_.body.accept(self)
     end
 
+    def visitCase case_,args=nil
+      case_.cond.accept(self)
+      case_.body.accept(self)
+    end
+
+    def visitWhen when_,args=nil
+      when_.value.accept(self) unless when_.value.is_a?(Symbol)
+      when_.body.accept(self)
+    end
+
     # === fsm
     def visitFsm fsm,args=nil
       fsm.body.accept(self)
@@ -102,7 +112,7 @@ module RubyRTL
       lit
     end
 
-    def visitRIntLit lit,args=nil
+    def visitUIntLit lit,args=nil
       lit
     end
 
@@ -110,7 +120,7 @@ module RubyRTL
       lit
     end
 
-    def visitRUintLit lit,args=nil
+    def visitRUIntLit lit,args=nil
       lit
     end
     # === types ===
@@ -130,7 +140,14 @@ module RubyRTL
     def visitIntType node,args=nil
     end
 
-    def visitUintType node,args=nil
+
+    def visitUIntType node,args=nil
+    end
+
+    def visitRIntType node,args=nil
+    end
+
+    def visitRUintType node,args=nil
     end
 
     def visitRecordType node,args=nil

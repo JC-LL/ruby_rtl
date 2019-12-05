@@ -15,8 +15,8 @@ class Test < Circuit
     wire :wc => :complex
 
     assign(w1 <= a)
-    assign(w2 <= f1 + a)
-    #assign(wc[:real] <= w2)
+    assign(w2 <= 42 + a)
+    assign(wc[:real] <= w2)
     assign(f2 <= wc)
   end
 end

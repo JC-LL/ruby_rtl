@@ -163,6 +163,20 @@ module RubyRTL
       @name=name
     end
   end
+  # case / switch
+  class Case < Ast
+    attr_accessor :cond,:body
+    def initialize condition,body=nil
+      @cond,@body=condition,body
+    end
+  end
+
+  class When < Ast
+    attr_accessor :value,:body
+    def initialize value,body
+      @value,@body=value,body
+    end
+  end
   # === expressions ===
   class Expr < Ast
     attr_accessor :type
@@ -199,7 +213,23 @@ module RubyRTL
 
   class IntLit < Literal
     def initialize val
+      val=val==0 ? 1 : val
+      bitwidth=Math.log2(val).floor+1
       super(val,IntType.new)
+    end
+
+    def +(other)
+      ret=Binary.new(self,"+",other)
+      ret.type=@type
+      ret
+    end
+  end
+
+  class UIntLit < Literal
+    def initialize val
+      val=val==0 ? 1 : val
+      bitwidth=Math.log2(val).floor+1
+      super(val,UIntType.new(bitwidth))
     end
 
     def +(other)
@@ -211,15 +241,17 @@ module RubyRTL
 
   class RIntLit < Literal
     def initialize val
-      super(val,RIntType.new)
+      val=val==0 ? 1 : val
+      bitwidth=Math.log2(val).floor + 1
+      super(val,RIntType.new(bitwidth))
     end
   end
 
-  class RUintLit < Literal
+  class RUIntLit < Literal
     def initialize val
       val=val==0 ? 1 : val
       nbits=Math.log2(val).floor + 1
-      super(val,RUintType.new(nbits))
+      super(val,RUIntType.new(nbits))
     end
   end
 
@@ -234,12 +266,12 @@ module RubyRTL
   end
 
   class BitVectorType < Type
-    attr_accessor :size
-    def initialize size
-      @size=size
+    attr_accessor :bitwidth
+    def initialize bitwidth
+      @bitwidth=bitwidth
     end
     def to_s
-      "bv#{size}"
+      "bv#{bitwidth}"
     end
   end
 
@@ -256,7 +288,7 @@ module RubyRTL
     end
   end
 
-  class RUintType < RType # Ruby Int !
+  class RUIntType < RType # Ruby Int !
     def to_s
       "ruint#{bitwidth}"
     end
@@ -273,7 +305,7 @@ module RubyRTL
     end
   end
 
-  class UintType < Type
+  class UIntType < Type
     attr_accessor :bitwidth
     def initialize nbits
       @bitwidth=nbits
@@ -281,6 +313,13 @@ module RubyRTL
 
     def to_s
       "uint#{bitwidth}"
+    end
+  end
+
+  class EnumType < Type
+    attr_accessor :items
+    def initialize items
+      @items=items
     end
   end
 

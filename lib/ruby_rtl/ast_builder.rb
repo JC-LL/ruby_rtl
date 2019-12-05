@@ -170,5 +170,14 @@ module RubyRTL
       sig
     end
 
+    def Case(arg,&block)
+      diff=differential_ast(&block)
+      @ast.body << Case.new(arg,Body.new(diff))
+    end
+
+    def When(arg,&block)
+      diff=differential_ast(&block)
+      @ast.body << When.new(arg,Body.new(diff))
+    end
   end
 end

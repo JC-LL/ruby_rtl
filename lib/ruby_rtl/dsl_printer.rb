@@ -195,11 +195,15 @@ module RubyRTL
       lit.val
     end
 
+    def visitUIntLit lit,args=nil
+      lit.val
+    end
+
     def visitRIntLit lit,args=nil
       lit.val
     end
 
-    def visitRUintLit lit,args=nil
+    def visitRUIntLit lit,args=nil
       lit.val
     end
     # === types ===
@@ -209,7 +213,7 @@ module RubyRTL
     end
 
     def visitBitVectorType bvt,args=nil
-      "bv#{bvt.size}"
+      "bv#{bvt.bitwidth}"
     end
 
     def visitIntType node,args=nil
@@ -224,7 +228,8 @@ module RubyRTL
       "ruint#{node.bitwidth}"
     end
 
-    def visitUintType node,args=nil
+    def visitUIntType node,args=nil
+      "uint#{node.bitwidth}"
     end
 
     def visitRecordType rec_type,args=nil
@@ -233,6 +238,20 @@ module RubyRTL
         items << "#{item} => #{type}"
       }
       "Record(#{items.join(",")})"
+    end
+
+    def visitEnumType enum_type,args=nil
+      "Enum(#{enum_type.items.join(",")})"
+    end
+
+    def visitCase case_,args=nil
+      code=Code.new
+      code << "Case(){"
+      code.indent=2
+      code << case_.body.accept(self)
+      code.indent=0
+      code << "}"
+      code
     end
   end
 end

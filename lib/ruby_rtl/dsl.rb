@@ -39,6 +39,8 @@ module RubyRTL
       $typedefs[name]||=ret
     when Hash
       ret=arg
+    when IntType,UintType,BitType,BitVectorType
+      ret=arg
     else
       raise "ERROR : DSL syntax error. build_type for #{arg} (#{arg.class})"
     end
@@ -60,8 +62,10 @@ module RubyRTL
       case other
       when Integer
         if other >=0
-          return RUintLit.new(other)
+          #return UIntLit.new(other)
+          return RUIntLit.new(other)
         else
+          #return IntLit.new(other)
           return RIntLit.new(other)
         end
       else
@@ -166,6 +170,7 @@ module RubyRTL
         field_name=index
         type.hash.each do |field,field_type|
           name="#{self.name}.#{index}"
+          field_type=build_type(field_type)
           @subsignals << sig=Sig.new(name,field_type)
         end
         idx=type.hash.keys.index(index)
@@ -197,7 +202,11 @@ module RubyRTL
   end
 
   def Struct hash
-    RecordType.new(hash)
+    Record(hash) # call to method Record
+  end
+
+  def Enum *elems
+    EnumType.new(elems)
   end
 
   def Bit val
