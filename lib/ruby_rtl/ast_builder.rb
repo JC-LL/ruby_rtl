@@ -79,7 +79,7 @@ module RubyRTL
     end
 
     def Elsif(cond,&block)
-    diff=differential_ast(&block)
+      diff=differential_ast(&block)
       @ast.body << Elsif.new(cond,Body.new(diff))
     end
 
@@ -95,7 +95,7 @@ module RubyRTL
     # the evaluation.
     def combinatorial(label=nil,&block)
       diff=differential_ast(&block)
-      @ast.body << Combinatorial.new(name,diff)
+      @ast.body << Combinatorial.new(name,Body.new(diff))
     end
 
     alias :comb :combinatorial

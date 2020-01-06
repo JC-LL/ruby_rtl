@@ -22,7 +22,8 @@ module RubyRTL
   end
 
   class Root < Ast
-    attr_accessor :ios,:decls,:body
+    #attr_accessor :ios,:decls,:body
+    attr_accessor :decls,:body
     def initialize
       @ios,@decls,@body=[],[],Body.new
     end
@@ -95,6 +96,7 @@ module RubyRTL
 
     def <<(e)
       @stmts << e
+      @stmts.flatten!
     end
 
     def each &block

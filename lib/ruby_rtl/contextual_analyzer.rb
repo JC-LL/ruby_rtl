@@ -9,7 +9,7 @@ module RubyRTL
       puts "[+] contextual analysis"
       root=circuit.ast
       if root
-        root.ios.each{|io| io.accept(self)}
+        #root.ios.each{|io| io.accept(self)}
         root.decls.each{|decl| decl.accept(self)}
         root.body.accept(self)
       end

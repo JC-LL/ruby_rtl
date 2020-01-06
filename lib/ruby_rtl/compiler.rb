@@ -3,6 +3,7 @@ require_relative 'dsl_printer'
 require_relative 'contextual_analyzer'
 require_relative 'type_checker'
 require_relative 'vhdl_generator'
+require_relative 'sexp_generator'
 
 module RubyRTL
 
@@ -15,6 +16,7 @@ module RubyRTL
       @analyzer=ContextualAnalyzer.new
       @checker=TypeChecker.new
       @vgen=VhdlGenerator.new
+      @sexp_gen=SexpGenerator.new
     end
 
     def header
@@ -28,6 +30,7 @@ module RubyRTL
       type_check(circuit)
       print_dsl(circuit)
       generate(circuit)
+      generate_sexp(circuit)
     end
 
     def print_dsl circuit
@@ -49,5 +52,10 @@ module RubyRTL
     def generate circuit
       @vgen.generate(circuit)
     end
+
+    def generate_sexp circuit
+      @sexp_gen.generate(circuit)
+    end
+
   end
 end

@@ -169,6 +169,7 @@ module RubyRTL
   end
 
   def Memory size,type
+    p type=build_type(type)
     MemoryType.new(size,type)
   end
 

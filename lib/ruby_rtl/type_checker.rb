@@ -11,7 +11,7 @@ module RubyRTL
       puts "[+] type checking"
       root=circuit.ast
       if root=circuit.ast
-        root.ios.each{|io| io.accept(self)}
+        #root.ios.each{|io| io.accept(self)}
         root.decls.each{|decl| decl.accept(self)}
         root.body.accept(self)
       end

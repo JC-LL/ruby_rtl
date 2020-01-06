@@ -23,7 +23,8 @@ module RubyRTL
       return unless root
 
       gen_type_package()
-      root.ios.each{|io| io.accept(self)}
+      #root.ios.each{|io| io.accept(self)}
+      @typedecls=root.decls.select{|decl| decl.is_a? TypeDecl}
       non_typedecls=root.decls.reject{|decl| decl.is_a? TypeDecl}
       non_typedecls.each{|decl| decl.accept(self)}
 
@@ -129,7 +130,6 @@ module RubyRTL
       if circuit.has_sequential_statements
         entity << "reset_n : in std_logic;"
         entity << "clk     : in std_logic;"
-        entity << "sreset  : in std_logic;"
       end
       ios.each{|io| entity << io}
       entity.indent=2
@@ -146,6 +146,9 @@ module RubyRTL
       archi.indent=2
       @fsm_defs.each do |decl|
         archi << decl
+      end
+      @typedecls.each do |typedecl|
+        archi << typedecl.accept(self)
       end
       @sigs.each do |sig,name|
         archi << "signal #{name} : #{sig.type.accept(self)};"
@@ -212,6 +215,11 @@ module RubyRTL
       name
     end
 
+    def visitTypeDecl decl,args=nil
+      definition=decl.definition.accept(self,decl.name)
+      "type #{decl.name} is #{definition};"
+    end
+
     def visitEnumType enum_type,name
       if name
         "type #{name} is (#{enum_type.items.join(',')});"
@@ -224,7 +232,7 @@ module RubyRTL
     def visitRecordType rectype,name
       if name
         code=Code.new
-        code << "type #{name} is record"
+        code << "record"
         code.indent=2
         rectype.hash.each do |name,type|
           type_s=type.accept(self)
@@ -235,6 +243,17 @@ module RubyRTL
         code
       else
         idx=$typedefs.values.index(rectype)
+        $typedefs.keys[idx]
+      end
+    end
+
+    def visitMemoryType memtype,name
+      if name
+        range="0 to #{memtype.size-1}"
+        type=memtype.type.accept(self)
+        "array(#{range}) of #{type}"
+      else
+        idx=$typedefs.values.index(memtype)
         $typedefs.keys[idx]
       end
     end
@@ -273,6 +292,18 @@ module RubyRTL
       instanciation.indent=0
       instanciation.newline
       instanciation
+    end
+
+    def visitCombinatorial comb,args=nil
+      code=Code.new
+      label=comb.label
+      code << "#{label} : process(all) --VHDL'08"
+      code << "begin"
+      code.indent=2
+      code << comb.body.accept(self)
+      code.indent=0
+      code << "end process;"
+      code
     end
 
     def visitSequential sequential,args=nil
@@ -457,7 +488,14 @@ module RubyRTL
     def visitIndexed indexed,args=nil
       lhs=indexed.lhs.accept(self)
       rhs=indexed.rhs.accept(self)
-      "#{lhs}(#{rhs})"
+      case indexed.rhs
+      when RUIntLit
+      else
+        conv_int_start="to_integer("
+        conv_int_end  =")"
+      end
+      puts indexed.rhs
+      "#{lhs}(#{conv_int_start}#{rhs}#{conv_int_end})"
     end
 
     # === types
@@ -480,9 +518,7 @@ module RubyRTL
       "signed(#{range})"
     end
 
-    def visitMemoryType memtype,args=nil
-      "array(0 to #{memtype.size-1}) of #{memtype.type}"
-    end
+
 
     def default_init type
       case type

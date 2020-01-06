@@ -34,10 +34,12 @@ module RubyRTL
     end
 
     def visitCombinatorial comb,args=nil
+      puts comb.body.class
       comb.body.accept(self)
     end
 
     def visitSequential seq,args=nil
+      puts seq.body.class
       seq.body.accept(self)
     end
 
