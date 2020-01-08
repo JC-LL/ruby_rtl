@@ -6,20 +6,24 @@ class FsmTest < Circuit
   def initialize
     input :reset,:go
     input :change
-    output :message
+    output :message 
 
     fsm(:test){
+
       assign(message <= 0)
+
       state(:s0){
         If(go==1){
           next_state :s1
         }
       }
+
       state(:s1){
         If(change==1){
           next_state :s2
         }
       }
+
       state(:s2){
         If (reset==1){
           assign(message <= 42)
