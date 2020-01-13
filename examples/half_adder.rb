@@ -1,4 +1,4 @@
-require_relative '../lib/ruby_rtl'
+require 'ruby_rtl'
 
 include RubyRTL
 
@@ -16,4 +16,5 @@ end
 
 if $PROGRAM_NAME == __FILE__
   pp ha=HalfAdder.new
+  Compiler.new.compile(ha)
 end
