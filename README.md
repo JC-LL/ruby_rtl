@@ -139,6 +139,84 @@ class Adder < Circuit
 end
 ~~~
 
+## Behavioral statements : counter
+
+All previous examples were *structural*. Hardware descriptions languages such as VHDL and Verilog also allows for so called *behavioral* descriptions (please note that this naming is historical, and still found in course books. This is not to be cofounded with moderne "High-level synthesis" that operates on *behavioral* code, generally expressed in C). Here our DSL allows more basically to resort to statements like :
+- **If..Elsif...Else**
+- **Case...When ...**
+
+RubyRTL introduces these DSL keywords, that **require upcase** (in order to avoid collision with regular Ruby host keywords).
+
+As for VHDL or Verilog, such RubyRTL statements are also synthesizable on hardware, if used correctly.
+
+The **important remark** is about *clocks* and *resets*. RubyRTL recocknizes (via **sequential** keyword) that your design requires D (edge-triggere) flip-flops : their clocking is considered *implicit*. By default, RubyRTL works on a *single clock* and generates synchronous and asynchronous reset. This may be modified in future versions.
+
+~~~ruby
+require_relative 'ruby_rtl'
+
+include RubyRTL
+
+class Counter < Circuit
+  def initialize
+    input  :do_count
+    output :count => :byte
+
+    sequential(:strange_counting){
+      If(do_count==1){
+        If(count==255){
+          assign(count <= 0)
+        }
+        Elsif(count==42){
+          assign(count <= count + 42)
+        }
+        Else{
+          assign(count <= count + 1)
+        }
+      }
+    }
+  end
+end
+~~~
+
+## Finite state machines (FSM)
+
+Finite state machines are essential in Digital System Design. However, VHDL and Verilog does not provide instrinsic keywords for them. Here, RubyRTL simplified the coding by providing such keywords.
+
+~~~ruby
+require_relative '../lib/ruby_rtl.rb'
+
+include RubyRTL
+
+class FSM1 < Circuit
+  def initialize
+    input :go,:b
+    output :f => :bv2
+
+    fsm(:simple){
+
+      assign(f <= 0)
+
+      state(:s0){
+        assign(f <= 1)
+        If(go==1){
+          next_state :s1
+        }
+      }
+
+      state(:s1){
+        assign(f <= 2)
+        next_state :s2
+      }
+
+      state(:s2){
+        assign(f <= 3)
+        next_state :s0
+      }
+    }
+  end
+end
+~~~
+
 
 ## How does this DSL works ?
 RubyRTL is an *internal DSL*. We can see it as a new language, embedded in Ruby syntax. It benefits from Ruby directly. However, such embedding needs a cautious resort to metaprogramming and introspection.
