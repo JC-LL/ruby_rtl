@@ -226,3 +226,5 @@ More to come here. Stay tuned !
 ## Contact
 Don't hesitate to drop me a mail if you like RubyRTL, or found a bug etc.
 I will try to do my best to consolidate, maintain and enhance RubyRTL.
+
+jean-christophe.le_lann at ensta-bretagne.fr
