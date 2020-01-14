@@ -1,4 +1,6 @@
-# RubyRTL : Ruby-on-gates !
+<img src="./doc/logo.png" alt="drawing" width="200"/>
+
+# RubyRTL : Ruby-*on-gates* !
 
 
 RubyRTL is an experimental Ruby DSL that aims at :
