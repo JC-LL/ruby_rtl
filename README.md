@@ -1,7 +1,9 @@
-# RubyRTL
+# RubyRTL : Ruby-on-gates !
+
+
 RubyRTL is an experimental Ruby DSL that aims at :
 - Describing Digital circuits in Ruby, at the RTL level
-- Generating synthésizable VHDL for FPGAs or ASICs
+- Generating synthesizable VHDL for FPGAs or ASICs
 
 ## How to install ?
 The recommanded version of RubyRTL is uploaded on RubyGems, so that can simply be installed on a Linux box, by typing (use of rvm recommended):
@@ -9,16 +11,16 @@ The recommanded version of RubyRTL is uploaded on RubyGems, so that can simply b
 
 ## How does it look ?
 
-Let's build a simple digital system : a Ripple carry circuit. Using RubyRTL, we can elaborate much more complex circuits than this simple adders. At the register-transfer level, much more complex functions operating on complex data structures, are possible : imagine a video macroblocks on which several filters are applied, in a single clock cycle, or a processor pipline etc.
+Let's build a introductory-level digital system : a ripple-carry adder. Using RubyRTL, we can elaborate much more complex circuits than this simple adders. At the register-transfer level, much more complex functions operating on complex data structures, are possible : imagine a video macroblocks on which several filters are applied, in a single clock cycle, or a processor pipline etc.
 
 For the moment, let's build this adder, in a progessive manner !
 
 ### Basic signal assignments : 1-bit half adder circuit
 
-We start by the Hello World of Digital Design : the Half adder. We recall that it built from  2 basic gates. That "block" can be then used in a hierarchical manner to build a adder operating on integers. This bottom-up approach is representative of Digital System Design : we can elaborate complex functions with a clever composition of such components, either hierarchically or using the intrinsic parallelism of digital circuit.
+We start by the "Hello World" of Digital Design : the Half adder. We recall that it built from  2 basic gates. That "block" can be then used in a hierarchical manner to build a 1-bit full-adder and then a classical adder operating on integers. See [wikipedia](https://en.wikipedia.org/wiki/Adder_(electronics))  if needed. This bottom-up approach is representative of Digital System Design : we can elaborate complex functions with a clever composition of such components, either hierarchically or using the intrinsic parallelism of digital circuit, or both.
 
 ~~~ruby
-  require_relative '../lib/ruby_rtl'
+  require_relative 'ruby_rtl'
 
   include RubyRTL
 
@@ -76,7 +78,7 @@ Here, we *reuse* 1-but half adder, to elaborate a 1-bit full adder. It now has a
 ~~~ruby
 require 'ruby_rtl'
 
-include RubyRTL
+include RubyRTL # module now visible
 
 require_relative 'half_adder' # preceding circuit
 
@@ -100,13 +102,13 @@ end
 ~~~
 
 ### Genericity : word-level adders
+Here comes the most exiting parts of RubyRTL. We can rely on Ruby host itself, to describe the glue between components. Ruby host also allows you to make regular computations required for the configuration of your design, which can be cumbersome in classical HDLs.
 
 ~~~ruby
 require_relative 'ruby_rtl'
+require_relative 'full_adder' #preceding circuit
 
 include RubyRTL
-
-require_relative 'full_adder' #preceding circuit
 
 class Adder < Circuit
 
@@ -139,9 +141,13 @@ class Adder < Circuit
 end
 ~~~
 
+The final circuit looks like this :
+
+
+
 ## Behavioral statements : counter
 
-All previous examples were *structural*. Hardware descriptions languages such as VHDL and Verilog also allows for so called *behavioral* descriptions (please note that this naming is historical, and still found in course books. This is not to be cofounded with moderne "High-level synthesis" that operates on *behavioral* code, generally expressed in C). Here our DSL allows more basically to resort to statements like :
+All previous examples were *structural*. Hardware descriptions languages such as VHDL and Verilog also allows for so called *behavioral* descriptions (please note that this naming is historical, and still found in course books. This is not to be cofounded with modern "High-level synthesis" also called *behavioral* synthesis, that is at a higher abstraction layer than RTL). Here our DSL allows more basically to resort to statements like :
 - **If..Elsif...Else**
 - **Case...When ...**
 
@@ -149,13 +155,9 @@ RubyRTL introduces these DSL keywords, that **require upcase** (in order to avoi
 
 As for VHDL or Verilog, such RubyRTL statements are also synthesizable on hardware, if used correctly.
 
-The **important remark** is about *clocks* and *resets*. RubyRTL recocknizes (via **sequential** keyword) that your design requires D (edge-triggere) flip-flops : their clocking is considered *implicit*. By default, RubyRTL works on a *single clock* and generates synchronous and asynchronous reset. This may be modified in future versions.
+The **important remark** is about *clocks* and *resets*. RubyRTL recognizes (via **sequential** keyword) that your design requires D (edge-triggered) flip-flops : their clocking is considered *implicit*. By default, RubyRTL works on a *single clock* and generates synchronous and asynchronous reset. This may be modified in future versions.
 
 ~~~ruby
-require_relative 'ruby_rtl'
-
-include RubyRTL
-
 class Counter < Circuit
   def initialize
     input  :do_count
@@ -180,13 +182,9 @@ end
 
 ## Finite state machines (FSM)
 
-Finite state machines are essential in Digital System Design. However, VHDL and Verilog does not provide instrinsic keywords for them. Here, RubyRTL simplified the coding by providing such keywords.
+Finite state machines are essential in Digital System Design. However, VHDL and Verilog do not provide instrinsic keywords for them. Here, RubyRTL simplified the coding by providing such keywords.
 
 ~~~ruby
-require_relative '../lib/ruby_rtl.rb'
-
-include RubyRTL
-
 class FSM1 < Circuit
   def initialize
     input :go,:b
