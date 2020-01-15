@@ -2,6 +2,7 @@
 
 # RubyRTL : Ruby-*on-gates* !
 
+WARNING : Work-in-progess !
 
 RubyRTL is an experimental Ruby DSL that aims at :
 - Describing Digital circuits in Ruby, at the RTL level
@@ -17,7 +18,7 @@ Let's build a introductory-level digital system : a ripple-carry adder. Using Ru
 
 For the moment, let's build this adder, in a progessive manner !
 
-### Basic signal assignments : 1-bit half adder circuit
+### Basic signal assignments : example of a 1-bit half adder circuit
 
 We start by the "Hello World" of Digital Design : the Half adder. We recall that it built from  2 basic gates. That "block" can be then used in a hierarchical manner to build a 1-bit full-adder and then a classical adder operating on integers. See [wikipedia](https://en.wikipedia.org/wiki/Adder_(electronics))  if needed. This bottom-up approach is representative of Digital System Design : we can elaborate complex functions with a clever composition of such components, either hierarchically or using the intrinsic parallelism of digital circuit, or both.
 
@@ -73,7 +74,7 @@ begin
 
 end rtl;
 ~~~
-## Hierarchical composition : 1-bit full adder
+## Hierarchical composition : example of 1-bit full adder
 
 Here, we *reuse* 1-but half adder, to elaborate a 1-bit full adder. It now has an input carry and an output carry. The example show how to call such hierarchal components and glue them together.
 
@@ -103,8 +104,8 @@ class FullAdder < Circuit
 end
 ~~~
 
-### Genericity : word-level adders
-Here comes the most exiting parts of RubyRTL. We can rely on Ruby host itself, to describe the glue between components. Ruby host also allows you to make regular computations required for the configuration of your design, which can be cumbersome in classical HDLs.
+## Genericity : example of a word-level adder
+Here comes the most exiting parts of RubyRTL. We can rely on Ruby host itself, to describe the glue between components. This glue may rely on many *parameters* (or "generics" in the VHDL world). Ruby host also allows you to make regular computations required for the configuration of your design, which can be cumbersome in classical HDLs.
 
 ~~~ruby
 require_relative 'ruby_rtl'
@@ -144,7 +145,7 @@ end
 ~~~
 
 The final circuit looks like this :
-
+<img src="./doc/adder.png" alt="drawing" width="400"/>
 
 
 ## Behavioral statements : counter
