@@ -8,6 +8,10 @@ RubyRTL is an experimental Ruby DSL that aims at :
 - Describing Digital circuits in Ruby, at the RTL level
 - Generating synthesizable VHDL for FPGAs or ASICs
 
+This approach is quite similar to [Python Migen](https://github.com/m-labs/migen). We recommand having a look at the very successful [Litex IP library](http://github.com/enjoy-digital/litex) approach, relying on Migen. Our [paper](http://www.ensta-bretagne.fr/lelann/papers/litex.pdf) talks about Litex and Migen.
+
+We believe however that Ruby metaprogramming capabilities probably best suits the idea of creating such DSL.
+
 ## How to install ?
 The recommanded version of RubyRTL is uploaded on RubyGems, so that can simply be installed on a Linux box, by typing (use of rvm recommended):
 - gem install ruby_rtl
@@ -107,6 +111,9 @@ end
 ## Genericity : example of a word-level adder
 Here comes the most exiting parts of RubyRTL. We can rely on Ruby host itself, to describe the glue between components. This glue may rely on many *parameters* (or "generics" in the VHDL world). Ruby host also allows you to make regular computations required for the configuration of your design, which can be cumbersome in classical HDLs.
 
+Let's build a *n-bits* adder using previous components !
+<img src="./doc/adder.png" alt="generic adder" width="300"/>
+
 ~~~ruby
 require_relative 'ruby_rtl'
 require_relative 'full_adder' #preceding circuit
@@ -143,10 +150,6 @@ class Adder < Circuit
   end
 end
 ~~~
-
-The final circuit looks like this :
-<img src="./doc/adder.png" alt="drawing" width="400"/>
-
 
 ## Behavioral statements : counter
 
@@ -217,7 +220,6 @@ class FSM1 < Circuit
   end
 end
 ~~~
-
 
 ## How does this DSL works ?
 RubyRTL is an *internal DSL*. We can see it as a new language, embedded in Ruby syntax. It benefits from Ruby directly. However, such embedding needs a cautious resort to metaprogramming and introspection.
