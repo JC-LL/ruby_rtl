@@ -226,6 +226,12 @@ RubyRTL is an *internal DSL*. We can see it as a new language, embedded in Ruby 
 
 More to come here. Stay tuned !
 
+## Please cite RubyRTL !
+
+RubyRTL was published at OSDA DATE'21 satellite workshop. The paper is here[https://www.jcll.fr/papers/osda_2020.pdf].
+A bibtex is also provided [https://www.jcll.fr/papers/osda_2020_poster.pdf].
+The bibtex entry is here [https://www.jcll.fr/papers/bib_rubyrtl_20.bib]
+
 ## Contact
 Don't hesitate to drop me a mail if you like RubyRTL, or found a bug etc.
 I will try to do my best to consolidate, maintain and enhance RubyRTL.
